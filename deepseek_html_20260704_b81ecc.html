@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guruxy Beta QA Hub</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para mejorar la experiencia */
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-bounce {
+            animation: bounce 0.6s ease;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .toast {
+            transition: all 0.3s ease;
+        }
+        .tab-btn {
+            transition: all 0.2s ease;
+        }
+        .bug-card {
+            transition: all 0.15s ease;
+        }
+        .bug-card:hover {
+            border-color: #6366f1;
+        }
+        textarea, input, select {
+            font-size: 0.875rem;
+        }
+        /* Scroll suave */
+        html {
+            scroll-behavior: smooth;
+        }
+        body.tester-mode #metrics-row,
+        body.tester-mode #tabs-nav,
+        body.tester-mode footer {
+            display: none;
+        }
+        body.tester-mode .qa-admin-only {
+            display: none;
+        }
+        body.public-mode #metrics-row,
+        body.public-mode #tabs-nav,
+        body.public-mode footer,
+        body.public-mode .qa-admin-only {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col antialiased">
+        <!-- HEADER -->
+        <header class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white shadow-md py-4 px-6 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center font-black text-xl text-white tracking-wider shadow-inner">GX</div>
+                    <div>
+                        <h1 class="text-xl font-extrabold tracking-tight">Guruxy Beta QA Hub</h1>
+                        <p class="text-xs text-indigo-200">Consola Interactiva para Pruebas de Usuarios en <span class="underline">dev.guruxy.com</span></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 bg-indigo-900/40 border border-indigo-700/50 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-100 shadow-sm">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Modo de Prueba Beta Listo
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTAINER -->
+        <div class="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-6 flex flex-col gap-6">
+            <!-- TOAST SYSTEM -->
+            <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
+
+            <!-- METRICS ROW -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="metrics-row">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Objetivo General</span>
+                        <h3 class="text-2xl font-black text-slate-800" id="beta-target-label">500 Testers</h3>
+                        <p class="text-xs text-slate-500 mt-1" id="beta-cohort-label">Cohorte actual: 25 testers</p>
+                        <p class="text-[11px] text-slate-400 mt-1" id="beta-progress-label">Progreso beta: 0.0% (0/500 SUS)</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500 font-bold text-xl">👥</div>
+                </div>
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Exit Criteria</span>
+                        <h3 class="text-2xl font-black text-slate-800">SUS &gt; 68</h3>
+                        <p class="text-xs text-slate-500 mt-1">Meta de usabilidad promedio</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 font-bold text-xl">📊</div>
+                </div>
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Bugs del Día</span>
+                        <h3 class="text-2xl font-black text-rose-600" id="bug-counter">0 Activos</h3>
+                        <p class="text-xs text-slate-500 mt-1" id="bug-p0-counter">0 críticos (P0)</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 font-bold text-xl">🐛</div>
+                </div>
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Usabilidad Promedio</span>
+                        <h3 class="text-2xl font-black text-emerald-600" id="avg-sus-score">0 pts</h3>
+                        <p class="text-xs text-slate-500 mt-1" id="sus-count-label">Basado en 0 evaluaciones</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 font-bold text-xl">📈</div>
+                </div>
+            </div>
+
+            <!-- TABS -->
+            <div class="bg-slate-200 p-1 rounded-xl flex flex-wrap gap-1" id="tabs-nav">
+                <button data-tab="strategy" class="tab-btn flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-bold rounded-lg transition-all bg-white text-indigo-950 shadow-sm">📋 Guía y Estrategia</button>
+                <button data-tab="forms" class="tab-btn flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100/50">🧩 Copiador de Formularios</button>
+                <button data-tab="testers" class="tab-btn flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100/50">🎯 Matriz de Testers</button>
+                <button data-tab="sus" class="tab-btn flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100/50">🧮 Calculadora SUS</button>
+                <button data-tab="bugs" class="tab-btn flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100/50">🐞 Logger de Bugs (<span id="bug-tab-counter">0</span>)</button>
+            </div>
+
+            <!-- TAB CONTENT -->
+            <div id="tab-content" class="animate-fadeIn">
+                <!-- Cada tab se renderiza dinámicamente -->
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 px-6 mt-12">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p>© 2026 Guruxy Beta Testing Suite. Todos los derechos reservados.</p>
+                <p class="flex items-center gap-1">
+                    <span>Para validar en:</span>
+                    <a href="https://dev.guruxy.com/" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:text-indigo-300 font-bold underline">dev.guruxy.com ↗</a>
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // ============================================================
+        // 1. DATA DEFINITIONS
+        // ============================================================
+        const FORM_A_DATA = {
+            id: 'form-a',
+            title: 'Formulario A - Home Guruxy',
+            duration: '12 a 18 minutos',
+            target: 'Cualquier tester (incluso sin conocimiento previo)',
+            sections: [{
+                title: 'Sección A0 - Datos Rápidos',
+                questions: [
+                    { id: 'A0.1', text: 'Nombre del tester', type: 'Short Text', options: [] },
+                    { id: 'A0.2', text: 'Dispositivo usado', type: 'Multiple Choice', options: ['Desktop', 'Mobile', 'Tablet'] },
+                    { id: 'A0.3', text: 'Navegador', type: 'Multiple Choice', options: ['Chrome', 'Safari', 'Brave', 'Edge', 'Firefox', 'Otro'] },
+                    { id: 'A0.4', text: 'Nivel digital', type: 'Multiple Choice', options: ['Bajo', 'Medio', 'Alto'] },
+                    { id: 'A0.5', text: '¿La prueba fue moderada?', type: 'Multiple Choice', options: ['Sí', 'No'] }
+                ]
+            }, {
+                title: 'Sección A1 - Primera Impresión',
+                instruction: 'Nota para moderador: no expliques qué es Guruxy antes de esta tarea para medir comprensión espontánea.',
+                questions: [
+                    { id: 'A1.1', text: 'Mira el Home durante 10 segundos. ¿Qué crees que hace Guruxy?', type: 'Paragraph', options: [] },
+                    { id: 'A1.2', text: '¿El tester entendió la propuesta de valor?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'A1.3', text: '¿Qué conceptos mencionó espontáneamente?', type: 'Checkboxes', options: ['Expertos/Gurús', 'Clientes', 'Consultas', 'Agenda', 'Pagos', 'Videollamada', 'Marketplace', 'Servicios', 'No entendió'] },
+                    { id: 'A1.4', text: 'Del 1 al 5, ¿qué tan claro fue el mensaje principal?', type: 'Linear Scale (1-5)', options: ['1 (Nada claro)', '5 (Muy claro)'] },
+                    { id: 'A1.5', text: '¿Qué frase o elemento del Home le ayudó más a entender?', type: 'Paragraph', options: [] }
+                ]
+            }, {
+                title: 'Sección A2 - Navegación y Búsqueda',
+                instruction: 'Nota para moderador: pide al tester encontrar algo, no le digas exactamente dónde hacer clic.',
+                questions: [
+                    { id: 'A2.1', text: 'Tarea: busca dónde encontrarías un especialista. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'A2.2', text: '¿Encontró el buscador principal?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'A2.3', text: '¿Entendió la diferencia entre Todos, Gurús y Especialidades?', type: 'Linear Scale (1-5)', options: ['1 (Nada claro)', '5 (Muy claro)'] },
+                    { id: 'A2.4', text: '¿Qué nombre sería más claro para esas opciones?', type: 'Paragraph', options: [] },
+                    { id: 'A2.5', text: 'Tarea: explora una categoría. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'A2.6', text: 'En mobile, ¿entendió que la barra de categorías se mueve horizontalmente?', type: 'Multiple Choice', options: ['Sí', 'No', 'No aplica'] },
+                    { id: 'A2.7', text: '¿Las categorías de colores ayudan o distraen?', type: 'Multiple Choice', options: ['Ayudan', 'Distraen', 'Neutro'] }
+                ]
+            }, {
+                title: 'Sección A3 - Roles y Llamadas a la Acción',
+                questions: [
+                    { id: 'A3.1', text: 'Tarea: imagina que eres cliente y quieres contratar una consulta. ¿Dónde harías clic?', type: 'Paragraph', options: [] },
+                    { id: 'A3.2', text: '¿Identificó correctamente el camino del cliente?', type: 'Multiple Choice', options: ['Sí', 'Con duda', 'No'] },
+                    { id: 'A3.3', text: 'Tarea: imagina que quieres ofrecer tus servicios como Gurú. ¿Dónde harías clic?', type: 'Paragraph', options: [] },
+                    { id: 'A3.4', text: '¿Identificó correctamente el camino del Gurú?', type: 'Multiple Choice', options: ['Sí', 'Con duda', 'No'] },
+                    { id: 'A3.5', text: '¿Los botones principales tienen jerarquía clara?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Muy claro)'] }
+                ]
+            }, {
+                title: 'Sección A4 - Confianza y Evidencia',
+                questions: [
+                    { id: 'A4.1', text: 'Del 1 al 5, ¿qué tanta confianza genera el Home?', type: 'Linear Scale (1-5)', options: ['1 (Poca confianza)', '5 (Mucha confianza)'] },
+                    { id: 'A4.2', text: '¿Qué parte genera más confianza?', type: 'Paragraph', options: [] },
+                    { id: 'A4.3', text: '¿Qué parte genera menos confianza?', type: 'Paragraph', options: [] },
+                    { id: 'A4.4', text: '¿Encontraste algún bug visual o funcional?', type: 'Multiple Choice', options: ['Sí', 'No'] },
+                    { id: 'A4.5', text: 'Sube evidencia si aplica: screenshot o video', type: 'File Upload', options: [] },
+                    { id: 'A4.6', text: 'Severidad del principal hallazgo', type: 'Dropdown', options: ['Sin hallazgo', 'P0 - Bloqueador crítico', 'P1 - Fricción alta', 'P2 - Fricción media', 'P3 - Mejora menor'] },
+                    { id: 'A4.7', text: 'Comentario final del Home', type: 'Paragraph', options: [] }
+                ]
+            }]
+        };
+
+        const FORM_B_DATA = {
+            id: 'form-b',
+            title: 'Formulario B - Path Guru',
+            duration: '25 a 35 minutos',
+            target: 'Testers que harán rol de especialistas, mentores, asesores, etc.',
+            sections: [{
+                title: 'Sección B0 - Datos Rápidos',
+                questions: [
+                    { id: 'B0.1', text: 'Nombre del tester', type: 'Short Text', options: [] },
+                    { id: 'B0.2', text: 'Dispositivo usado', type: 'Multiple Choice', options: ['Desktop', 'Mobile', 'Tablet'] },
+                    { id: 'B0.3', text: 'Navegador', type: 'Multiple Choice', options: ['Chrome', 'Safari', 'Brave', 'Edge', 'Firefox', 'Otro'] },
+                    { id: 'B0.4', text: '¿El tester entiende el rol de Gurú?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] }
+                ]
+            }, {
+                title: 'Sección B1 - Login y Entrada',
+                instruction: 'Nota para moderador: si el login falla por credenciales o ambiente, marcar como bloqueo técnico y no insistir más de 3 minutos.',
+                questions: [
+                    { id: 'B1.1', text: 'Tarea: inicia sesión como Gurú. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'B1.2', text: '¿El login fue claro?', type: 'Linear Scale (1-5)', options: ['1 (Muy confuso)', '5 (Muy claro)'] },
+                    { id: 'B1.3', text: '¿Hubo error de autenticación, idioma o redirección?', type: 'Paragraph', options: [] },
+                    { id: 'B1.4', text: 'Tarea: abre el menú de cuenta y busca Mi Oficina. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'B1.5', text: '¿El menú de cuenta fue claro?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Claro)'] }
+                ]
+            }, {
+                title: 'Sección B2 - Perfil y Activación',
+                instruction: 'Nota para moderador: aquí buscamos si el Guru entiende qué le falta para estar listo. No le expliques el porcentaje antes de preguntar.',
+                questions: [
+                    { id: 'B2.1', text: 'Tarea: entra a Perfil y explica qué significa tu estado actual', type: 'Paragraph', options: [] },
+                    { id: 'B2.2', text: '¿Entendió el porcentaje de completitud?', type: 'Linear Scale (1-5)', options: ['1 (Incomprensible)', '5 (Súper claro)'] },
+                    { id: 'B2.3', text: '¿Entendió la diferencia entre Activo, Validado y perfil incompleto?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'B2.4', text: '¿El checklist le indicó qué hacer después?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'B2.5', text: '¿Cuál fue el siguiente paso que el tester creyó que debía hacer?', type: 'Paragraph', options: [] },
+                    { id: 'B2.6', text: 'Tarea: intenta cambiar la foto de perfil. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'B2.7', text: '¿Hubo feedback claro al subir, cancelar o fallar la foto?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No', 'No probado'] },
+                    { id: 'B2.8', text: 'Sube evidencia si hubo bug en perfil o foto', type: 'File Upload', options: [] }
+                ]
+            }, {
+                title: 'Sección B3 - Crear Servicio',
+                instruction: 'Nota para moderador: no expliques cada campo. Observa qué campos generan preguntas.',
+                questions: [
+                    { id: 'B3.1', text: 'Tarea: ve a Servicios. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'B3.2', text: '¿El empty state de Servicios le indicó qué hacer?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'B3.3', text: 'Tarea: crea un primer servicio. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'B3.4', text: '¿Qué campo generó más duda?', type: 'Checkboxes', options: ['Nombre', 'Descripción', 'Duración', 'Precio', 'Moneda', 'Virtual/Presencial', 'Categoría', 'Subcategoría', 'Crear servicio', 'Ninguno'] },
+                    { id: 'B3.5', text: '¿Entendió Virtual vs Presencial?', type: 'Linear Scale (1-5)', options: ['1 (Inconsistente)', '5 (Perfecto)'] },
+                    { id: 'B3.6', text: '¿El tester esperaba una vista previa del servicio antes de publicar?', type: 'Multiple Choice', options: ['Sí', 'No', 'No lo mencionó'] },
+                    { id: 'B3.7', text: '¿Qué validación o ayuda faltó en el formulario?', type: 'Paragraph', options: [] },
+                    { id: 'B3.8', text: 'Sube evidencia si hubo bug creando servicio', type: 'File Upload', options: [] }
+                ]
+            }, {
+                title: 'Sección B4 - Agenda y Disponibilidad',
+                instruction: 'Nota para moderador: presten atención a si diferencia crear disponibilidad de agendar una cita.',
+                questions: [
+                    { id: 'B4.1', text: 'Tarea: ve a Agenda. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'B4.2', text: '¿El empty state de agenda fue claro?', type: 'Linear Scale (1-5)', options: ['1 (Nada claro)', '5 (Muy claro)'] },
+                    { id: 'B4.3', text: 'Tarea: crea un horario para recibir reservas. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'B4.4', text: '¿El tester entendió si estaba creando disponibilidad o una cita?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'B4.5', text: '¿Individual y Generación masiva fueron claros?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Excelente)'] },
+                    { id: 'B4.6', text: '¿Fecha y hora funcionaron sin problemas?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'B4.7', text: '¿Qué nombre sería más claro?', type: 'Multiple Choice', options: ['Agendar horarios', 'Crear disponibilidad', 'Crear cita', 'Otro'] },
+                    { id: 'B4.8', text: 'Sube evidencia si hubo bug en Agenda', type: 'File Upload', options: [] }
+                ]
+            }, {
+                title: 'Sección B5 - Oficina Virtual y Panel',
+                instruction: 'Nota para moderador: la clave es si sabe qué significa estar desconectado y qué hacer cuando llega un visitante.',
+                questions: [
+                    { id: 'B5.1', text: 'Tarea: entra a Oficina Virtual. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'B5.2', text: '¿Qué cree el tester que puede hacer en Oficina Virtual?', type: 'Paragraph', options: [] },
+                    { id: 'B5.3', text: '¿Entendió Desconectado / Esperando visitantes?', type: 'Linear Scale (1-5)', options: ['1 (No entiende)', '5 (Súper claro)'] },
+                    { id: 'B5.4', text: '¿Supo cuál era el siguiente paso para recibir clientes?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'B5.5', text: 'Tarea: abre el Panel. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'B5.6', text: '¿Entendió la Cola?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Claro)'] },
+                    { id: 'B5.7', text: '¿Entendió Alertas?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Claro)'] },
+                    { id: 'B5.8', text: '¿Entendió Contactos?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Claro)'] },
+                    { id: 'B5.9', text: '¿Entendió Ajustes y notificaciones?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Claro)'] },
+                    { id: 'B5.10', text: '¿El panel se sintió útil o demasiado avanzado?', type: 'Multiple Choice', options: ['Útil', 'Avanzado/confuso', 'Neutro'] },
+                    { id: 'B5.11', text: 'Sube evidencia si hubo bug en Oficina o Panel', type: 'File Upload', options: [] }
+                ]
+            }, {
+                title: 'Sección B6 - Mensajes y Clientes',
+                questions: [
+                    { id: 'B6.1', text: 'Tarea: ve a Mensajes e intenta vincular/invitar cliente. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'B6.2', text: '¿Qué término entiende mejor?', type: 'Multiple Choice', options: ['Vincular cliente', 'Invitar cliente', 'Agregar cliente', 'Conectar cliente', 'Otro'] },
+                    { id: 'B6.3', text: '¿Entendió qué pasará después de escribir el correo del cliente?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'B6.4', text: 'Tarea: ve a Clientes y explica qué esperas ver ahí', type: 'Paragraph', options: [] },
+                    { id: 'B6.5', text: '¿Los contadores de Clientes fueron claros?', type: 'Linear Scale (1-5)', options: ['1 (No se entiende)', '5 (Muy claro)'] }
+                ]
+            }, {
+                title: 'Sección B7 - Cierre Path Guru',
+                questions: [
+                    { id: 'B7.1', text: '¿Cuál fue el mayor bloqueo del Path Guru?', type: 'Paragraph', options: [] },
+                    { id: 'B7.2', text: '¿Qué tarea fue más fácil?', type: 'Paragraph', options: [] },
+                    { id: 'B7.3', text: '¿Qué tarea fue más confusa?', type: 'Paragraph', options: [] },
+                    { id: 'B7.4', text: 'Del 1 al 5, ¿qué tan listo se sentiría para recibir clientes?', type: 'Linear Scale (1-5)', options: ['1 (Nada listo)', '5 (Súper listo)'] },
+                    { id: 'B7.5', text: 'Tiempo aproximado de la prueba Guru', type: 'Short Text', options: [] },
+                    { id: 'B7.6', text: 'Severidad del hallazgo principal', type: 'Dropdown', options: ['Sin hallazgo', 'P0 - Bloqueador crítico', 'P1 - Fricción alta', 'P2 - Fricción media', 'P3 - Mejora menor'] }
+                ]
+            }]
+        };
+
+        const FORM_C_DATA = {
+            id: 'form-c',
+            title: 'Formulario C - Path Cliente',
+            duration: '25 a 35 minutos',
+            target: 'Testers que simularán buscar o contratar ayuda/consultas.',
+            sections: [{
+                title: 'Sección C0 - Datos Rápidos',
+                questions: [
+                    { id: 'C0.1', text: 'Nombre del tester', type: 'Short Text', options: [] },
+                    { id: 'C0.2', text: 'Dispositivo usado', type: 'Multiple Choice', options: ['Desktop', 'Mobile', 'Tablet'] },
+                    { id: 'C0.3', text: 'Navegador', type: 'Multiple Choice', options: ['Chrome', 'Safari', 'Brave', 'Edge', 'Firefox', 'Otro'] },
+                    { id: 'C0.4', text: 'Necesidad simulada (ej. tutor, médico, coach)', type: 'Short Text', options: [] }
+                ]
+            }, {
+                title: 'Sección C1 - Descubrimiento y Búsqueda',
+                instruction: 'Nota para moderador: deja que el usuario busque como lo haría naturalmente.',
+                questions: [
+                    { id: 'C1.1', text: 'Tarea: busca un Gurú dentro de una categoría. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'C1.2', text: '¿Entendió el sidebar de especialidades?', type: 'Linear Scale (1-5)', options: ['1 (Muy confuso)', '5 (Muy útil)'] },
+                    { id: 'C1.3', text: '¿Alguna especialidad cortada o truncada generó confusión?', type: 'Multiple Choice', options: ['Sí', 'No', 'No aplica'] },
+                    { id: 'C1.4', text: 'Tarea: abre el selector del buscador. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'C1.5', text: '¿Entendió Todos, Gurús y Especialidades?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Muy claro)'] },
+                    { id: 'C1.6', text: '¿Qué etiquetas serían más claras?', type: 'Paragraph', options: [] },
+                    { id: 'C1.7', text: 'Tarea: busca por nombre de Gurú. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No', 'No probado'] },
+                    { id: 'C1.8', text: 'Tarea: busca por especialidad. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No', 'No probado'] }
+                ]
+            }, {
+                title: 'Sección C2 - Filtros',
+                instruction: 'Nota para moderador: pedir una tarea concreta, como "encuentra alguien online o económico".',
+                questions: [
+                    { id: 'C2.1', text: 'Tarea: abre Filtros. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'C2.2', text: '¿Entendió el filtro por ciudad?', type: 'Linear Scale (1-5)', options: ['1 (No)', '5 (Sí, fácil)'] },
+                    { id: 'C2.3', text: '¿Entendió el filtro por estado?', type: 'Linear Scale (1-5)', options: ['1 (No)', '5 (Sí, fácil)'] },
+                    { id: 'C2.4', text: '¿El término "Busy" generó confusión?', type: 'Multiple Choice', options: ['Sí', 'No', 'No lo notó'] },
+                    { id: 'C2.5', text: '¿Entendió el filtro/orden de precio?', type: 'Linear Scale (1-5)', options: ['1 (No)', '5 (Sí)'] },
+                    { id: 'C2.6', text: '¿Pudo aplicar filtros correctamente?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'C2.7', text: '¿Pudo limpiar filtros correctamente?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No', 'No probado'] },
+                    { id: 'C2.8', text: '¿El overlay o panel de filtros se sintió cómodo?', type: 'Linear Scale (1-5)', options: ['1 (Malo)', '5 (Excelente)'] }
+                ]
+            }, {
+                title: 'Sección C3 - Listado y Cards de Gurús',
+                questions: [
+                    { id: 'C3.1', text: 'Tarea: elige una card de Gurú que contactarías. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'C3.2', text: '¿La card generó confianza?', type: 'Linear Scale (1-5)', options: ['1 (Sospechosa)', '5 (Mucha confianza)'] },
+                    { id: 'C3.3', text: '¿Entendió la tarifa?', type: 'Linear Scale (1-5)', options: ['1 (No se entiende)', '5 (Claro)'] },
+                    { id: 'C3.4', text: '¿Entendió la experiencia/años?', type: 'Linear Scale (1-5)', options: ['1 (No)', '5 (Sí)'] },
+                    { id: 'C3.5', text: '¿Entendió el estado Online/No disponible/Ocupado?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Clarísimo)'] },
+                    { id: 'C3.6', text: '¿El botón Contactar Ahora fue coherente con el estado del Gurú?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'C3.7', text: '¿Los perfiles de prueba o avatares genéricos bajan confianza?', type: 'Multiple Choice', options: ['Sí', 'No', 'No lo notó'] }
+                ]
+            }, {
+                title: 'Sección C4 - Perfil del Gurú y Servicios',
+                questions: [
+                    { id: 'C4.1', text: 'Tarea: entra al perfil de un Gurú. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'C4.2', text: '¿Entendió quién es el Gurú y qué ofrece?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Súper claro)'] },
+                    { id: 'C4.3', text: '¿Entendió Verificado / En línea / Nuevo / Rating 0.0?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Súper claro)'] },
+                    { id: 'C4.4', text: '¿Entendió el rango de tarifas?', type: 'Linear Scale (1-5)', options: ['1 (Incierto)', '5 (Claro)'] },
+                    { id: 'C4.5', text: 'Tarea: selecciona un servicio. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'C4.6', text: '¿Entendió precio y resumen del servicio seleccionado?', type: 'Linear Scale (1-5)', options: ['1 (No)', '5 (Sí)'] },
+                    { id: 'C4.7', text: '¿Entendió la modalidad virtual/presencial?', type: 'Linear Scale (1-5)', options: ['1 (No)', '5 (Sí)'] }
+                ]
+            }, {
+                title: 'Sección C5 - Reserva, Disponibilidad y Contacto',
+                instruction: 'Nota para moderador: si no hay horarios, eso NO es fallo del tester. Se mide si entiende el bloqueo y el plan B.',
+                questions: [
+                    { id: 'C5.1', text: 'Tarea: intenta reservar el servicio. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'C5.2', text: 'Si no había horarios, ¿entendió qué pasaba?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No', 'No aplica'] },
+                    { id: 'C5.3', text: '¿El botón "Reservar y pagar" deshabilitado fue claro?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Súper claro)'] },
+                    { id: 'C5.4', text: '¿Esperaba una opción "Solicitar disponibilidad"?', type: 'Multiple Choice', options: ['Sí', 'No', 'No lo mencionó'] },
+                    { id: 'C5.5', text: 'Tarea: usa "Contactar ahora". ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'C5.6', text: '¿Entendió que entraba a la Oficina del Gurú?', type: 'Linear Scale (1-5)', options: ['1 (Perdido)', '5 (Entendió)'] },
+                    { id: 'C5.7', text: '¿Entendió "Esperando aprobación"?', type: 'Linear Scale (1-5)', options: ['1 (No)', '5 (Sí)'] },
+                    { id: 'C5.8', text: '¿El texto "Intento 2 de 3" fue claro?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No', 'No apareció'] },
+                    { id: 'C5.9', text: '¿Supo si debía esperar, escribir por chat o dejar mensaje?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                    { id: 'C5.10', text: 'Tarea: deja un mensaje si el Gurú no responde. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No', 'No probado'] },
+                    { id: 'C5.11', text: '¿El campo URL de video o enlace opcional fue claro?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No', 'No probado'] },
+                    { id: 'C5.12', text: 'Sube evidencia si hubo bug o fricción fuerte', type: 'File Upload', options: [] }
+                ]
+            }, {
+                title: 'Sección C6 - Cierre Path Cliente',
+                questions: [
+                    { id: 'C6.1', text: '¿Cuál fue el mayor bloqueo del Path Cliente?', type: 'Paragraph', options: [] },
+                    { id: 'C6.2', text: '¿Qué parte generó más confianza?', type: 'Paragraph', options: [] },
+                    { id: 'C6.3', text: '¿Qué parte generó menos confianza?', type: 'Paragraph', options: [] },
+                    { id: 'C6.4', text: 'Del 1 al 5, ¿qué tanta confianza tendría para pagar una consulta?', type: 'Linear Scale (1-5)', options: ['1 (Ninguna)', '5 (Total)'] },
+                    { id: 'C6.5', text: 'Del 1 al 5, ¿qué tan fácil fue encontrar un Gurú relevante?', type: 'Linear Scale (1-5)', options: ['1 (Difícil)', '5 (Facilísimo)'] },
+                    { id: 'C6.6', text: 'Tiempo aproximado de la prueba Cliente', type: 'Short Text', options: [] },
+                    { id: 'C6.7', text: 'Severidad del hallazgo principal', type: 'Dropdown', options: ['Sin hallazgo', 'P0 - Bloqueador crítico', 'P1 - Fricción alta', 'P2 - Fricción media', 'P3 - Mejora menor'] }
+                ]
+            }]
+        };
+
+        // Datos de testers sugeridos
+        const SUGGESTED_TESTERS = [
+            { id: 1, name: 'Tester 1 (Cliente Explorador)', role: 'Cliente', forms: ['Formulario A', 'Formulario C'], focus: 'Foco en exploración espontánea del home y flujos principales de contratación.', done: { A: false, B: false, C: false, SUS: false } },
+            { id: 2, name: 'Tester 2 (Cliente Enfocado)', role: 'Cliente', forms: ['Formulario A', 'Formulario C'], focus: 'Foco técnico en motor de búsqueda, uso exhaustivo de filtros y verificación de estados.', done: { A: false, B: false, C: false, SUS: false } },
+            { id: 3, name: 'Tester 3 (Gurú de Contenido)', role: 'Gurú', forms: ['Formulario A', 'Formulario B'], focus: 'Foco en creación de perfil, subir multimedia/fotos, y configuración estructurada de servicios.', done: { A: false, B: false, C: false, SUS: false } },
+            { id: 4, name: 'Tester 4 (Gurú Operativo)', role: 'Gurú', forms: ['Formulario B'], focus: 'Foco en la agenda, creación de disponibilidad masiva, panel de oficina y mensajería.', done: { A: false, B: false, C: false, SUS: false } },
+            { id: 5, name: 'Tester 5 (Usuario Mixto End-to-End)', role: 'Mixto', forms: ['Formulario A', 'Formulario B', 'Formulario C'], focus: 'Prueba cruzada. Registrarse, crear servicios, buscarse a sí mismo como cliente y enviar solicitud.', done: { A: false, B: false, C: false, SUS: false } }
+        ];
+
+        const SUS_ITEMS = [
+            { id: 1, text: 'Me gustaría usar Guruxy con frecuencia.', type: 'positive' },
+            { id: 2, text: 'Guruxy me pareció innecesariamente complejo.', type: 'negative' },
+            { id: 3, text: 'Guruxy fue fácil de usar.', type: 'positive' },
+            { id: 4, text: 'Creo que necesitaría ayuda técnica para usar Guruxy.', type: 'negative' },
+            { id: 5, text: 'Las funciones principales están muy bien integradas.', type: 'positive' },
+            { id: 6, text: 'Encontré demasiadas inconsistencias/bugs en la plataforma.', type: 'negative' },
+            { id: 7, text: 'Creo que la mayoría de personas aprendería a usar Guruxy rápidamente.', type: 'positive' },
+            { id: 8, text: 'Guruxy se sintió bastante difícil de usar o frustrante.', type: 'negative' },
+            { id: 9, text: 'Me sentí seguro/confiado usando Guruxy.', type: 'positive' },
+            { id: 10, text: 'Necesité aprender demasiadas cosas antes de poder avanzar.', type: 'negative' }
+        ];
+
+        // ============================================================
+        // 2. STATE
+        // ============================================================
+        const APP_CONFIG = {
+            targetBetaTesters: 500,
+            cohortSize: 25,
+            storageKey: 'guruxy-beta-qa-state-v1',
+            autosaveMs: 250,
+            remoteProvider: 'google-apps-script',
+            submitEndpoint: '',
+            fetchEndpoint: '',
+            fetchIntervalMs: 60000,
+            remoteApiKey: ''
+        };
+
+        if (typeof window.GX_QA_CONFIG === 'object' && window.GX_QA_CONFIG) {
+            Object.assign(APP_CONFIG, window.GX_QA_CONFIG);
+        }
+
+        function buildInitialState() {
+            return {
+                activeTab: 'strategy',
+                selectedForm: 'A',
+                uiMode: 'full',
+                lockedForm: null,
+                ingestedSubmissionIds: [],
+                publicResponses: [],
+                testers: JSON.parse(JSON.stringify(SUGGESTED_TESTERS)),
+                testerNotes: { 1: '', 2: '', 3: '', 4: '', 5: '' },
+                susRatings: { 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3, 10: 3 },
+                susHistory: [
+                    { tester: 'Tester 1 (Cliente)', score: 72.5, date: 'Simulado' },
+                    { tester: 'Tester 3 (Gurú)', score: 65.0, date: 'Simulado' }
+                ],
+                newSusName: 'Tester 2',
+                bugs: [
+                    {
+                        id: 1,
+                        screen: 'Servicios de Gurú',
+                        url: '/dashboard/services',
+                        action: 'Guardar nuevo servicio virtual',
+                        actual: 'Al hacer click en Guardar, el modal se queda girando infinitamente.',
+                        expected: 'Debe mostrar alerta de éxito, cerrar modal e insertar el item en el listado.',
+                        steps: '1. Iniciar sesión como Gurú\n2. Ir a Mi Oficina > Servicios\n3. Click en Crear Servicio\n4. Completar campos obligatorios\n5. Click en Guardar',
+                        severity: 'P0',
+                        reproducibility: 'Siempre',
+                        device: 'Chrome / MacOS Monterey'
+                    },
+                    {
+                        id: 2,
+                        screen: 'Filtros de Búsqueda',
+                        url: '/marketplace',
+                        action: 'Filtrar por Especialidad "Tecnología"',
+                        actual: 'El sidebar se deforma en mobile y tapa el listado de cards.',
+                        expected: 'En mobile, debe actuar como panel colapsable u overlay superior.',
+                        steps: '1. Entrar desde móvil\n2. Hacer click en "Filtros"\n3. Seleccionar categoría',
+                        severity: 'P2',
+                        reproducibility: 'A veces',
+                        device: 'Safari / iPhone 13 Pro'
+                    }
+                ],
+                newBug: {
+                    screen: '',
+                    url: '',
+                    action: '',
+                    actual: '',
+                    expected: '',
+                    steps: '',
+                    severity: 'P1',
+                    reproducibility: 'Siempre',
+                    device: ''
+                }
+            };
+        }
+
+        let state = buildInitialState();
+        let didRestoreState = false;
+        let persistTimer = null;
+
+        function persistState() {
+            try {
+                const snapshot = {
+                    activeTab: state.activeTab,
+                    selectedForm: state.selectedForm,
+                    uiMode: state.uiMode,
+                    lockedForm: state.lockedForm,
+                    ingestedSubmissionIds: state.ingestedSubmissionIds,
+                    publicResponses: state.publicResponses,
+                    testers: state.testers,
+                    testerNotes: state.testerNotes,
+                    susRatings: state.susRatings,
+                    susHistory: state.susHistory,
+                    newSusName: state.newSusName,
+                    bugs: state.bugs,
+                    newBug: state.newBug
+                };
+                localStorage.setItem(APP_CONFIG.storageKey, JSON.stringify(snapshot));
+            } catch (_err) {
+                // Local persistence is best-effort in freemium environments.
+            }
+        }
+
+        function restoreStateFromStorage() {
+            try {
+                const raw = localStorage.getItem(APP_CONFIG.storageKey);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== 'object') return;
+
+                const defaults = buildInitialState();
+                state.activeTab = typeof parsed.activeTab === 'string' ? parsed.activeTab : defaults.activeTab;
+                state.selectedForm = typeof parsed.selectedForm === 'string' ? parsed.selectedForm : defaults.selectedForm;
+                state.uiMode = typeof parsed.uiMode === 'string' ? parsed.uiMode : defaults.uiMode;
+                state.lockedForm = typeof parsed.lockedForm === 'string' ? parsed.lockedForm : defaults.lockedForm;
+                state.ingestedSubmissionIds = Array.isArray(parsed.ingestedSubmissionIds) ? parsed.ingestedSubmissionIds : defaults.ingestedSubmissionIds;
+                state.publicResponses = Array.isArray(parsed.publicResponses) ? parsed.publicResponses : defaults.publicResponses;
+                state.testers = Array.isArray(parsed.testers) ? parsed.testers : defaults.testers;
+                state.testerNotes = parsed.testerNotes && typeof parsed.testerNotes === 'object' ? parsed.testerNotes : defaults.testerNotes;
+                state.susRatings = parsed.susRatings && typeof parsed.susRatings === 'object' ? parsed.susRatings : defaults.susRatings;
+                state.susHistory = Array.isArray(parsed.susHistory) ? parsed.susHistory : defaults.susHistory;
+                state.newSusName = typeof parsed.newSusName === 'string' ? parsed.newSusName : defaults.newSusName;
+                state.bugs = Array.isArray(parsed.bugs) ? parsed.bugs : defaults.bugs;
+                state.newBug = parsed.newBug && typeof parsed.newBug === 'object' ? parsed.newBug : defaults.newBug;
+
+                didRestoreState = true;
+            } catch (_err) {
+                // Ignore corrupted state and start with defaults.
+            }
+        }
+
+        function schedulePersist() {
+            if (persistTimer) clearTimeout(persistTimer);
+            persistTimer = setTimeout(() => {
+                persistState();
+            }, APP_CONFIG.autosaveMs);
+        }
+
+        // ============================================================
+        // 3. UTILITY FUNCTIONS
+        // ============================================================
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-slate-900 text-slate-100 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-bounce toast';
+            toast.innerHTML = `
+                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                <span class="text-sm font-semibold">${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 2500);
+        }
+
+        function copyText(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('¡Copiado al portapapeles!');
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('¡Copiado al portapapeles!');
+            } catch (e) {
+                showToast('Error al copiar.');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function getFormData(formKey) {
+            if (formKey === 'A') return FORM_A_DATA;
+            if (formKey === 'B') return FORM_B_DATA;
+            return FORM_C_DATA;
+        }
+
+        function getShareUrlForCurrentForm() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'forms');
+            url.searchParams.set('form', state.selectedForm);
+            url.searchParams.set('mode', 'public');
+            return url.toString();
+        }
+
+        function applyUrlState() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const tab = params.get('tab');
+                const form = params.get('form');
+                const mode = params.get('mode');
+
+                if (tab && ['strategy', 'forms', 'testers', 'sus', 'bugs'].includes(tab)) {
+                    state.activeTab = tab;
+                }
+                if (form && ['A', 'B', 'C'].includes(form)) {
+                    state.selectedForm = form;
+                }
+                if (mode === 'tester') {
+                    state.uiMode = 'tester';
+                    state.activeTab = 'forms';
+                    if (form && ['A', 'B', 'C'].includes(form)) {
+                        state.lockedForm = form;
+                    }
+                }
+                if (mode === 'public') {
+                    state.uiMode = 'public';
+                    state.activeTab = 'forms';
+                    if (form && ['A', 'B', 'C'].includes(form)) {
+                        state.lockedForm = form;
+                    }
+                }
+            } catch (_err) {
+                // If URL parsing fails, keep current state.
+            }
+        }
+
+        function getSusScore(ratings) {
+            let sum = 0;
+            SUS_ITEMS.forEach(item => {
+                const rating = ratings[item.id] || 3;
+                if (item.type === 'positive') {
+                    sum += (rating - 1);
+                } else {
+                    sum += (5 - rating);
+                }
+            });
+            return sum * 2.5;
+        }
+
+        function getSusInterpretation(score) {
+            if (score >= 80.3) return { grade: 'A (Excelente)', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' };
+            if (score >= 68) return { grade: 'B/C (Aceptable / Promedio)', color: 'text-indigo-600 bg-indigo-50 border-indigo-200' };
+            if (score >= 51) return { grade: 'D (Pobre usabilidad - Fricción alta)', color: 'text-amber-600 bg-amber-50 border-amber-200' };
+            return { grade: 'F (Inaceptable - Bloqueos graves)', color: 'text-red-600 bg-red-50 border-red-200' };
+        }
+
+        function renderQuestionInput(question, key) {
+            if (question.type.includes('Paragraph')) {
+                return `<textarea name="${key}" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[90px]" placeholder="Tu respuesta..."></textarea>`;
+            }
+            if (question.type.includes('Multiple Choice') || question.type.includes('Dropdown')) {
+                return `
+                    <select name="${key}" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Selecciona una opción</option>
+                        ${question.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                    </select>
+                `;
+            }
+            if (question.type.includes('Checkboxes')) {
+                return `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        ${question.options.map((opt, idx) => `
+                            <label class="flex items-center gap-2 text-xs p-2 bg-white border border-slate-200 rounded-lg">
+                                <input type="checkbox" name="${key}[]" value="${opt}" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                <span>${opt}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            if (question.type.includes('Linear Scale')) {
+                return `
+                    <div class="flex gap-2 flex-wrap">
+                        ${[1,2,3,4,5].map(v => `
+                            <label class="flex items-center gap-1.5 text-xs px-2 py-1 bg-white border border-slate-200 rounded-lg">
+                                <input type="radio" name="${key}" value="${v}" class="text-indigo-600 focus:ring-indigo-500">
+                                <span>${v}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            return `<input type="text" name="${key}" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Tu respuesta...">`;
+        }
+
+        function renderPublicForm() {
+            const formData = getFormData(state.selectedForm);
+            return `
+                <div class="max-w-4xl mx-auto w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-6 animate-fadeIn">
+                    <div class="border-b border-slate-100 pb-4 mb-5">
+                        <h2 class="text-xl font-black text-slate-900">${formData.title}</h2>
+                        <p class="text-sm text-slate-500 mt-1">Formulario público para beta testers. Al enviar, los datos se integran al QA Hub.</p>
+                        <p class="text-xs text-slate-400 mt-2">Duración estimada: ${formData.duration}</p>
+                    </div>
+
+                    <form id="public-response-form" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">Tu nombre *</label>
+                                <input type="text" name="meta_tester_name" required class="w-full p-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ej. Ana Tester">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">Email (opcional)</label>
+                                <input type="email" name="meta_tester_email" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="ana@correo.com">
+                            </div>
+                        </div>
+
+                        ${formData.sections.map((section, sIdx) => `
+                            <section class="border border-slate-200 rounded-xl overflow-hidden">
+                                <div class="bg-slate-100 px-4 py-3 border-b border-slate-200">
+                                    <h3 class="font-black text-sm text-slate-800">${section.title}</h3>
+                                    ${section.instruction ? `<p class="text-[11px] text-amber-700 mt-1">${section.instruction}</p>` : ''}
+                                </div>
+                                <div class="p-4 space-y-4">
+                                    ${section.questions.map((q, qIdx) => {
+                                        const key = `q_${q.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+                                        return `
+                                            <div class="space-y-1.5">
+                                                <label class="text-sm font-semibold text-slate-800">${q.id}. ${q.text}</label>
+                                                <div class="text-[11px] text-slate-400 mb-1">${q.type}</div>
+                                                ${renderQuestionInput(q, key)}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </section>
+                        `).join('')}
+
+                        <section class="border border-slate-200 rounded-xl p-4 space-y-4">
+                            <h3 class="font-black text-sm text-slate-800">Datos para paneles QA</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">SUS total (0-100)</label>
+                                    <input type="number" name="meta_sus_score" min="0" max="100" step="0.1" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ej. 74.5">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">Severidad del principal hallazgo</label>
+                                    <select name="meta_bug_severity" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        <option value="">Sin bug</option>
+                                        <option value="P0">P0 - Bloqueador crítico</option>
+                                        <option value="P1">P1 - Fricción alta</option>
+                                        <option value="P2">P2 - Fricción media</option>
+                                        <option value="P3">P3 - Mejora menor</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">Bug principal (si aplica)</label>
+                                <textarea name="meta_bug_actual" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[80px]" placeholder="Describe el problema principal que encontraste..."></textarea>
+                            </div>
+                        </section>
+
+                        <div class="flex justify-end">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-2.5 px-4 rounded-lg">Enviar Respuestas</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+        }
+
+        function parseFormPayload(formElement) {
+            const fd = new FormData(formElement);
+            const answers = {};
+
+            for (const [key, value] of fd.entries()) {
+                if (key.endsWith('[]')) {
+                    const base = key.replace(/\[\]$/, '');
+                    if (!Array.isArray(answers[base])) answers[base] = [];
+                    answers[base].push(value);
+                } else {
+                    answers[key] = value;
+                }
+            }
+
+            return {
+                id: 'sub-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+                form: state.selectedForm,
+                testerName: answers.meta_tester_name || 'Tester',
+                testerEmail: answers.meta_tester_email || '',
+                submittedAt: new Date().toISOString(),
+                susScore: answers.meta_sus_score ? parseFloat(answers.meta_sus_score) : null,
+                bugSeverity: answers.meta_bug_severity || '',
+                bugActual: answers.meta_bug_actual || '',
+                answers
+            };
+        }
+
+        function ingestSubmission(submission) {
+            if (!submission || !submission.id) return;
+            if (state.ingestedSubmissionIds.includes(submission.id)) return;
+
+            state.publicResponses.unshift(submission);
+            state.ingestedSubmissionIds.push(submission.id);
+
+            if (typeof submission.susScore === 'number' && !Number.isNaN(submission.susScore)) {
+                state.susHistory.push({
+                    tester: submission.testerName + ' (web)',
+                    score: submission.susScore,
+                    date: new Date(submission.submittedAt || Date.now()).toLocaleString()
+                });
+            }
+
+            if (submission.bugActual && submission.bugActual.trim()) {
+                state.bugs = [{
+                    id: Date.now(),
+                    screen: 'Reporte Web Tester',
+                    url: '/public-form',
+                    action: 'Respuesta de formulario público',
+                    actual: submission.bugActual.trim(),
+                    expected: 'No aplica',
+                    steps: 'Reporte enviado desde enlace público',
+                    severity: submission.bugSeverity || 'P2',
+                    reproducibility: 'No especificado',
+                    device: 'No especificado'
+                }, ...state.bugs];
+            }
+        }
+
+        async function sendSubmissionToEndpoint(submission) {
+            if (!APP_CONFIG.submitEndpoint) return;
+            if (APP_CONFIG.remoteProvider === 'google-apps-script') {
+                const resp = await fetch(APP_CONFIG.submitEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(submission)
+                });
+                if (!resp.ok) {
+                    throw new Error('submit_failed');
+                }
+                return;
+            }
+
+            const headers = { 'Content-Type': 'application/json' };
+            if (APP_CONFIG.remoteApiKey) {
+                headers['x-api-key'] = APP_CONFIG.remoteApiKey;
+            }
+
+            const resp = await fetch(APP_CONFIG.submitEndpoint, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(submission)
+            });
+            if (!resp.ok) {
+                throw new Error('submit_failed');
+            }
+        }
+
+        function normalizeRemotePayload(payload) {
+            if (Array.isArray(payload)) return payload;
+            if (payload && Array.isArray(payload.items)) return payload.items;
+            if (payload && Array.isArray(payload.submissions)) return payload.submissions;
+            return [];
+        }
+
+        async function fetchRemoteSubmissions() {
+            if (!APP_CONFIG.fetchEndpoint || state.uiMode === 'public') return;
+            try {
+                let resp;
+                if (APP_CONFIG.remoteProvider === 'google-apps-script') {
+                    resp = await fetch(APP_CONFIG.fetchEndpoint);
+                } else {
+                    const headers = {};
+                    if (APP_CONFIG.remoteApiKey) {
+                        headers['x-api-key'] = APP_CONFIG.remoteApiKey;
+                    }
+                    resp = await fetch(APP_CONFIG.fetchEndpoint, { headers });
+                }
+                if (!resp.ok) return;
+                const payload = await resp.json();
+                const records = normalizeRemotePayload(payload);
+                if (!records.length) return;
+
+                records.forEach(sub => ingestSubmission(sub));
+                schedulePersist();
+                updateMetrics();
+            } catch (_err) {
+                // Keep local mode if remote sync fails.
+            }
+        }
+
+        // ============================================================
+        // 4. RENDER FUNCTIONS
+        // ============================================================
+        function renderTabs() {
+            if (state.uiMode === 'public') {
+                state.activeTab = 'forms';
+                if (state.lockedForm && ['A', 'B', 'C'].includes(state.lockedForm)) {
+                    state.selectedForm = state.lockedForm;
+                }
+            }
+            if (state.uiMode === 'tester') {
+                state.activeTab = 'forms';
+                if (state.lockedForm && ['A', 'B', 'C'].includes(state.lockedForm)) {
+                    state.selectedForm = state.lockedForm;
+                }
+            }
+
+            document.body.classList.toggle('public-mode', state.uiMode === 'public');
+            document.body.classList.toggle('tester-mode', state.uiMode === 'tester');
+
+            // Update tab buttons active state
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                const tab = btn.dataset.tab;
+                if (tab === state.activeTab) {
+                    btn.className = 'tab-btn flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-bold rounded-lg transition-all bg-white text-indigo-950 shadow-sm';
+                } else {
+                    btn.className = 'tab-btn flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100/50';
+                }
+            });
+
+            // Render content based on active tab
+            const container = document.getElementById('tab-content');
+            if (state.uiMode === 'public') {
+                container.innerHTML = renderPublicForm();
+                bindEvents();
+                return;
+            }
+
+            switch (state.activeTab) {
+                case 'strategy':
+                    container.innerHTML = renderStrategy();
+                    break;
+                case 'forms':
+                    container.innerHTML = renderForms();
+                    break;
+                case 'testers':
+                    container.innerHTML = renderTesters();
+                    break;
+                case 'sus':
+                    container.innerHTML = renderSUS();
+                    break;
+                case 'bugs':
+                    container.innerHTML = renderBugs();
+                    break;
+                default:
+                    container.innerHTML = '<p>Selecciona una pestaña</p>';
+            }
+            // Update metrics
+            updateMetrics();
+            // Re-bind events after render
+            bindEvents();
+        }
+
+        function renderStrategy() {
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+                    <div class="lg:col-span-2 flex flex-col gap-6">
+                        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                            <h3 class="text-lg font-black text-slate-800 mb-4 flex items-center gap-2">
+                                <span>💡</span> Metodología del Moderador (Think Aloud)
+                            </h3>
+                            <p class="text-sm text-slate-600 mb-4">
+                                No buscamos que el usuario califique con "me gusta" o "no me gusta". El moderador debe actuar como observador neutral para extraer datos puros basándose en tres principios fundamentales:
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                                    <div class="font-extrabold text-indigo-600 mb-1">1. ¿Qué entiende?</div>
+                                    <p class="text-xs text-slate-500 leading-relaxed">Mide la claridad del diseño, copies y propuesta de valor iniciales.</p>
+                                </div>
+                                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                                    <div class="font-extrabold text-indigo-600 mb-1">2. ¿Puede completarlo?</div>
+                                    <p class="text-xs text-slate-500 leading-relaxed">Mide la usabilidad funcional y si la lógica de negocio requiere soporte.</p>
+                                </div>
+                                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                                    <div class="font-extrabold text-indigo-600 mb-1">3. ¿Dónde se bloquea?</div>
+                                    <p class="text-xs text-slate-500 leading-relaxed">Localiza el dolor exacto para alimentar tu backlog técnico de prioridad real.</p>
+                                </div>
+                            </div>
+                            <h4 class="font-bold text-sm text-slate-800 mb-2">Hacks clave para que la sesión fluya sin sesgos:</h4>
+                            <ul class="space-y-2 text-sm text-slate-600 list-disc list-inside">
+                                <li><strong>Fomentar el "Think Aloud":</strong> Pide que hablen en voz alta ("Pienso que este botón sirve para...", "Estoy buscando cómo pagar...").</li>
+                                <li><strong>La regla de los 30 segundos:</strong> Si se equivocan de ruta o dudan, espera de 15 a 30 segundos en silencio. No corrijas al tester rápido, el error es el dato.</li>
+                                <li><strong>Preguntas espejo:</strong> Si preguntan "¿Dónde hago click?", responde con "¿Dónde intentarías hacer click tú primero?".</li>
+                                <li><strong>Pausas de energía:</strong> Si notas cansancio extremo, interrumpe la tarea y pasa al cuestionario SUS de cierre de inmediato.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                            <h3 class="text-lg font-black text-slate-800 mb-4 flex items-center gap-2">
+                                <span>🚀</span> Criterios de Éxito de Negocio (Exit Criteria)
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="p-4 border border-slate-200 rounded-xl bg-slate-50">
+                                    <div class="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-1">Home Guruxy</div>
+                                    <ul class="text-xs text-slate-600 space-y-1.5 mt-2">
+                                        <li class="flex items-center gap-1.5"><span class="text-emerald-500">✔</span> 80% Entiende el concepto</li>
+                                        <li class="flex items-center gap-1.5"><span class="text-emerald-500">✔</span> 80% Busca categóricamente</li>
+                                        <li class="flex items-center gap-1.5"><span class="text-emerald-500">✔</span> Confianza prom. ≥ 4.0 / 5.0</li>
+                                    </ul>
+                                </div>
+                                <div class="p-4 border border-slate-200 rounded-xl bg-slate-50">
+                                    <div class="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-1">Path Gurú</div>
+                                    <ul class="text-xs text-slate-600 space-y-1.5 mt-2">
+                                        <li class="flex items-center gap-1.5"><span class="text-emerald-500">✔</span> 80% Entiende activación</li>
+                                        <li class="flex items-center gap-1.5"><span class="text-emerald-500">✔</span> 80% Puede crear servicios</li>
+                                        <li class="flex items-center gap-1.5"><span class="text-emerald-500">✔</span> 75% Configura disponibilidad</li>
+                                        <li class="flex items-center gap-1.5"><span class="text-rose-500">✖</span> 0 Bugs P0 pendientes</li>
+                                    </ul>
+                                </div>
+                                <div class="p-4 border border-slate-200 rounded-xl bg-slate-50">
+                                    <div class="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-1">Path Cliente</div>
+                                    <ul class="text-xs text-slate-600 space-y-1.5 mt-2">
+                                        <li class="flex items-center gap-1.5"><span class="text-emerald-500">✔</span> 80% Encuentra gurú relevante</li>
+                                        <li class="flex items-center gap-1.5"><span class="text-emerald-500">✔</span> 85% Entiende disponibilidad</li>
+                                        <li class="flex items-center gap-1.5"><span class="text-emerald-500">✔</span> 80% Deja un mensaje/contacto</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-6">
+                        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex-1">
+                            <h3 class="text-lg font-black text-slate-800 mb-4 flex items-center gap-2">
+                                <span>🚨</span> Severidades de Fricción / Bugs
+                            </h3>
+                            <p class="text-xs text-slate-500 mb-4">Usa estas guías simplificadas al reportar bugs para unificar criterios entre tus testers y desarrolladores:</p>
+                            <div class="space-y-4">
+                                <div class="p-3 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
+                                    <div class="font-extrabold text-sm text-red-700">P0 - Bloqueador Crítico</div>
+                                    <p class="text-xs text-red-600 mt-1">El usuario es incapaz de completar una tarea clave. Requiere solución inmediata. <span class="block italic mt-1 font-semibold text-[11px]">Ej: Error al procesar reserva o no abre la videollamada virtual.</span></p>
+                                </div>
+                                <div class="p-3 bg-orange-50 border-l-4 border-orange-500 rounded-r-lg">
+                                    <div class="font-extrabold text-sm text-orange-700">P1 - Fricción Alta</div>
+                                    <p class="text-xs text-orange-600 mt-1">Completa la tarea pero con altísima confusión, requiere ayuda del moderador o existe alta probabilidad de abandono voluntario. <span class="block italic mt-1 font-semibold text-[11px]">Ej: No distingue crear disponibilidad de agendar una cita personal.</span></p>
+                                </div>
+                                <div class="p-3 bg-yellow-50 border-l-4 border-yellow-500 rounded-r-lg">
+                                    <div class="font-extrabold text-sm text-yellow-700">P2 - Fricción Media</div>
+                                    <p class="text-xs text-yellow-600 mt-1">Avanza por su cuenta, pero duda, demora o genera una molestia que daña la confianza percibida en el flujo. <span class="block italic mt-1 font-semibold text-[11px]">Ej: Copy confuso en "Busy", filtros no del todo claros o selectores complejos.</span></p>
+                                </div>
+                                <div class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+                                    <div class="font-extrabold text-sm text-blue-700">P3 - Mejora Menor / Visual</div>
+                                    <p class="text-xs text-blue-600 mt-1">Detalle estético, microcopy, alineación o error tipográfico. No detiene la tarea en absoluto. <span class="block italic mt-1 font-semibold text-[11px]">Ej: Errores ortográficos, textos superpuestos o spacing asimétrico.</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderForms() {
+            const currentForm = getFormData(state.selectedForm);
+            return `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 animate-fadeIn">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5 mb-6">
+                        <div>
+                            <h3 class="text-lg font-black text-slate-800">Visualizador y Copiador de Preguntas</h3>
+                            <p class="text-xs text-slate-500">${state.uiMode === 'tester' ? 'Modo Tester: completa este formulario y comparte tus observaciones con el moderador.' : 'Úsalo para estructurar rápidamente tus Google Forms sin tener que reescribir cada campo.'}</p>
+                        </div>
+                        ${state.uiMode === 'tester'
+                            ? `<div class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">Formulario asignado: ${currentForm.title}</div>`
+                            : `<div class="flex bg-slate-100 p-1 rounded-xl gap-1">
+                                <button data-form="A" class="form-selector px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${state.selectedForm === 'A' ? 'bg-white text-indigo-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">Form A (Home)</button>
+                                <button data-form="B" class="form-selector px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${state.selectedForm === 'B' ? 'bg-white text-indigo-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">Form B (Gurú)</button>
+                                <button data-form="C" class="form-selector px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${state.selectedForm === 'C' ? 'bg-white text-indigo-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">Form C (Cliente)</button>
+                            </div>`
+                        }
+                    </div>
+                    <div class="flex flex-col gap-6">
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-wrap gap-4 items-center justify-between text-xs">
+                            <div>
+                                <span class="font-bold text-slate-400 block uppercase tracking-wide">Público Objetivo</span>
+                                <span class="text-slate-700 font-semibold">${currentForm.target}</span>
+                            </div>
+                            <div>
+                                <span class="font-bold text-slate-400 block uppercase tracking-wide">Duración Estimada</span>
+                                <span class="text-slate-700 font-semibold">${currentForm.duration}</span>
+                            </div>
+                            <div class="qa-admin-only">
+                                <button data-copy-full class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg transition-colors flex items-center gap-1.5 text-xs">
+                                    📥 Copiar Form Completo
+                                </button>
+                            </div>
+                            <div class="qa-admin-only">
+                                <button data-share-form class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg transition-colors flex items-center gap-1.5 text-xs">
+                                    🔗 Copiar Enlace para Tester
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            ${currentForm.sections.map((section, sIdx) => `
+                                <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                                    <div class="bg-slate-100/80 px-4 py-3 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                        <div>
+                                            <h4 class="font-black text-sm text-slate-800">${section.title}</h4>
+                                            ${section.instruction ? `<p class="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 mt-1 inline-block">💡 ${section.instruction}</p>` : ''}
+                                        </div>
+                                        <button data-copy-section="${sIdx}" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-1 px-2.5 rounded transition-all">Copiar Sección</button>
+                                    </div>
+                                    <div class="divide-y divide-slate-100">
+                                        ${section.questions.map(q => `
+                                            <div class="p-4 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-start justify-between gap-4 text-xs md:text-sm">
+                                                <div class="flex-1 space-y-1">
+                                                    <div class="flex items-center gap-2 flex-wrap">
+                                                        <span class="font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded text-[11px]">${q.id}</span>
+                                                        <span class="text-slate-800 font-semibold">${q.text}</span>
+                                                    </div>
+                                                    <div class="flex items-center gap-3 text-[11px] text-slate-400 pt-1">
+                                                        <span>Tipo: <strong class="text-slate-500">${q.type}</strong></span>
+                                                        ${q.options.length > 0 ? `<span class="truncate">Opciones: <strong class="text-slate-500">${q.options.join(' | ')}</strong></span>` : ''}
+                                                    </div>
+                                                </div>
+                                                <div class="flex gap-2">
+                                                    <button data-copy-question="${q.id}" class="border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-100 py-1 px-2.5 rounded text-xs font-bold text-slate-600 transition-colors">📝 Pregunta</button>
+                                                    ${q.options.length > 0 ? `<button data-copy-options="${q.id}" class="border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-100 py-1 px-2.5 rounded text-xs font-bold text-slate-600 transition-colors">📋 Opciones</button>` : ''}
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTesters() {
+            return `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 animate-fadeIn">
+                    <h3 class="text-lg font-black text-slate-800 mb-2">Matriz Interactiva de Testers y Roles</h3>
+                    <p class="text-xs text-slate-500 mb-6">Plantilla base de cohorte. Usa esta matriz para replicar ciclos semanales hasta la meta de ${APP_CONFIG.targetBetaTesters} beta testers.</p>
+                    <div class="space-y-6">
+                        ${state.testers.map(tester => `
+                            <div class="border border-slate-200 rounded-xl p-5 shadow-sm hover:border-indigo-200 transition-all">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-3 h-3 rounded-full ${tester.role === 'Cliente' ? 'bg-emerald-400' : tester.role === 'Gurú' ? 'bg-indigo-400' : 'bg-purple-400'}"></span>
+                                            <h4 class="font-extrabold text-slate-800 text-sm">${tester.name}</h4>
+                                        </div>
+                                        <p class="text-[11px] text-slate-400 mt-0.5">Rol Simulado: <strong class="text-slate-600">${tester.role}</strong> | ${tester.focus}</p>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5">
+                                        ${tester.forms.map(f => `<span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">${f}</span>`).join('')}
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div class="md:col-span-1 space-y-2">
+                                        <span class="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Avance de Flujos</span>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <label class="flex items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-lg cursor-pointer text-xs font-semibold hover:bg-slate-100/50">
+                                                <input type="checkbox" data-tester="${tester.id}" data-field="A" ${tester.done.A ? 'checked' : ''} class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"> Home (A)
+                                            </label>
+                                            <label class="flex items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-lg cursor-pointer text-xs font-semibold hover:bg-slate-100/50">
+                                                <input type="checkbox" data-tester="${tester.id}" data-field="B" ${tester.done.B ? 'checked' : ''} class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"> Gurú (B)
+                                            </label>
+                                            <label class="flex items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-lg cursor-pointer text-xs font-semibold hover:bg-slate-100/50">
+                                                <input type="checkbox" data-tester="${tester.id}" data-field="C" ${tester.done.C ? 'checked' : ''} class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"> Cliente (C)
+                                            </label>
+                                            <label class="flex items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-lg cursor-pointer text-xs font-semibold hover:bg-slate-100/50">
+                                                <input type="checkbox" data-tester="${tester.id}" data-field="SUS" ${tester.done.SUS ? 'checked' : ''} class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"> SUS Terminado
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <span class="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-1">Observaciones / Comentarios del Moderador</span>
+                                        <textarea data-notes="${tester.id}" class="w-full text-xs p-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 h-16" placeholder="Escribe dudas recurrentes, momentos de silencio o citas textuales...">${state.testerNotes[tester.id] || ''}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSUS() {
+            const currentScore = getSusScore(state.susRatings);
+            const interpretation = getSusInterpretation(currentScore);
+            const avgScore = state.susHistory.length > 0 ? (state.susHistory.reduce((a, b) => a + b.score, 0) / state.susHistory.length).toFixed(1) : 0;
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+                            <div>
+                                <h3 class="text-lg font-black text-slate-800">Evaluador SUS (System Usability Scale)</h3>
+                                <p class="text-xs text-slate-500">Formulario estándar de usabilidad de 10 ítems. Pide al tester contestar del 1 al 5.</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xl">🧪</div>
+                        </div>
+                        <div class="space-y-4">
+                            ${SUS_ITEMS.map(item => `
+                                <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs md:text-sm">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-mono text-indigo-600 font-bold">#${item.id}</span>
+                                            <span class="text-slate-700 font-semibold">${item.text}</span>
+                                        </div>
+                                        <span class="text-[9px] font-bold uppercase tracking-wider px-1 py-0.2 rounded mt-1 inline-block ${item.type === 'positive' ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50'}">${item.type === 'positive' ? 'Sentido Positivo' : 'Sentido Negativo'}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between sm:justify-start gap-1 bg-white border border-slate-200 p-1.5 rounded-lg">
+                                        <span class="text-[10px] text-slate-400 font-bold px-1.5">Muy en desacuerdo</span>
+                                        ${[1,2,3,4,5].map(val => `
+                                            <button data-sus="${item.id}" data-value="${val}" class="sus-btn w-7 h-7 rounded-md font-bold text-xs transition-all ${state.susRatings[item.id] === val ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}">${val}</button>
+                                        `).join('')}
+                                        <span class="text-[10px] text-slate-400 font-bold px-1.5">Muy de acuerdo</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="border-t border-slate-100 mt-6 pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                <span class="text-xs font-bold text-slate-600 shrink-0">Nombre de Tester:</span>
+                                <input type="text" id="sus-name-input" value="${state.newSusName}" placeholder="Ej. Tester 2 (Cliente)" class="text-xs p-2 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white w-full sm:w-44 focus:outline-none">
+                            </div>
+                            <button id="save-sus-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 px-4 rounded-lg transition-colors w-full sm:w-auto">📥 Guardar este Resultado SUS</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-6">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center">
+                            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Score de la Sesión Actual</span>
+                            <div class="text-6xl font-black text-indigo-950 my-3">${currentScore.toFixed(1)}</div>
+                            <p class="text-xs text-slate-400 mb-4">Escala de 0 a 100 puntos</p>
+                            <div class="p-3.5 border rounded-xl text-xs font-bold ${interpretation.color}">Calidad: ${interpretation.grade}</div>
+                            <p class="text-[11px] text-slate-500 mt-3 italic leading-relaxed">*Un score superior a 68 indica que la plataforma es aceptable. Más de 80 califica como usabilidad Premium.</p>
+                        </div>
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                            <h4 class="font-extrabold text-sm text-slate-800 mb-3">Historial de Usabilidad (${state.susHistory.length})</h4>
+                            <div class="space-y-2.5">
+                                ${state.susHistory.map((h, idx) => `
+                                    <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between gap-3 text-xs">
+                                        <div>
+                                            <div class="font-bold text-slate-800">${h.tester}</div>
+                                            <span class="text-[9px] text-slate-400 block">${h.date}</span>
+                                        </div>
+                                        <div class="font-mono font-black ${h.score >= 68 ? 'text-emerald-600' : 'text-amber-500'}">${h.score.toFixed(1)} pts</div>
+                                    </div>
+                                `).join('')}
+                                ${state.susHistory.length === 0 ? '<div class="text-center py-4 text-xs text-slate-400">Sin registros guardados aún.</div>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderBugs() {
+            const bugCount = state.bugs.length;
+            const p0Count = state.bugs.filter(b => b.severity === 'P0').length;
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+                    <div class="lg:col-span-1 flex flex-col gap-6">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sticky top-24">
+                            <h3 class="text-base font-black text-slate-800 mb-1">Registrar Bug o Fricción</h3>
+                            <p class="text-xs text-slate-500 mb-5">Captura cada obstáculo hallado durante el test en dev.guruxy.com</p>
+                            <form id="bug-form" class="space-y-4 text-xs">
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">Pantalla Afectada *</label>
+                                    <input type="text" required placeholder="Ej. Oficina Virtual, Agenda, Sidebar" id="bug-screen" value="${state.newBug.screen}" class="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block font-bold text-slate-700 mb-1">Ruta / URL</label>
+                                        <input type="text" placeholder="Ej. /marketplace" id="bug-url" value="${state.newBug.url}" class="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block font-bold text-slate-700 mb-1">Severidad</label>
+                                        <select id="bug-severity" class="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none font-bold">
+                                            <option value="P0" ${state.newBug.severity === 'P0' ? 'selected' : ''}>P0 - Bloqueador crítico</option>
+                                            <option value="P1" ${state.newBug.severity === 'P1' ? 'selected' : ''}>P1 - Fricción alta</option>
+                                            <option value="P2" ${state.newBug.severity === 'P2' ? 'selected' : ''}>P2 - Fricción media</option>
+                                            <option value="P3" ${state.newBug.severity === 'P3' ? 'selected' : ''}>P3 - Mejora menor</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">¿Qué intentaba hacer el tester?</label>
+                                    <input type="text" placeholder="Ej. Crear primer servicio, cambiar foto..." id="bug-action" value="${state.newBug.action}" class="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">¿Qué pasó en realidad? *</label>
+                                    <textarea required placeholder="Comportamiento del sistema o duda mental que lo detuvo" id="bug-actual" class="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none h-14">${state.newBug.actual}</textarea>
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">¿Qué debió haber pasado?</label>
+                                    <textarea placeholder="Resultado esperado o flujo idóneo" id="bug-expected" class="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none h-14">${state.newBug.expected}</textarea>
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">Pasos para reproducir</label>
+                                    <textarea placeholder="1. Login como Gurú... 2. click en..." id="bug-steps" class="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none h-14 font-mono">${state.newBug.steps}</textarea>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block font-bold text-slate-700 mb-1">Dispositivo/Navegador</label>
+                                        <input type="text" placeholder="Ej. Chrome/Mac" id="bug-device" value="${state.newBug.device}" class="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block font-bold text-slate-700 mb-1">Reproducibilidad</label>
+                                        <select id="bug-repro" class="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none">
+                                            <option value="Siempre" ${state.newBug.reproducibility === 'Siempre' ? 'selected' : ''}>Siempre</option>
+                                            <option value="A veces" ${state.newBug.reproducibility === 'A veces' ? 'selected' : ''}>A veces</option>
+                                            <option value="Sólo una vez" ${state.newBug.reproducibility === 'Sólo una vez' ? 'selected' : ''}>Sólo una vez</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-lg transition-colors mt-2">🐞 Registrar en Tabla de Incidentes</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 flex flex-col gap-4">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-6">
+                                <div>
+                                    <h3 class="text-lg font-black text-slate-800">Buzón de Incidentes de Sesión</h3>
+                                    <p class="text-xs text-slate-500">Puedes exportar toda la lista filtrada de bugs para enviarla a tu equipo de desarrollo.</p>
+                                </div>
+                                <button id="export-bugs-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-3.5 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto">📥 Exportar en Markdown (Notion/Slack)</button>
+                            </div>
+                            <div class="space-y-4" id="bug-list">
+                                ${state.bugs.map(b => `
+                                    <div class="border border-slate-200 rounded-xl p-5 shadow-sm bug-card flex flex-col gap-3">
+                                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-50 pb-2">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${b.severity === 'P0' ? 'text-red-700 bg-red-100' : b.severity === 'P1' ? 'text-orange-700 bg-orange-100' : b.severity === 'P2' ? 'text-yellow-700 bg-yellow-100' : 'text-blue-700 bg-blue-100'}">${b.severity}</span>
+                                                <h4 class="font-extrabold text-sm text-slate-800">${b.screen}</h4>
+                                            </div>
+                                            <button data-delete-bug="${b.id}" class="text-slate-400 hover:text-rose-500 font-bold text-xs transition-colors p-1">Eliminar</button>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                            <div class="space-y-2">
+                                                <div><span class="font-bold text-slate-400 block text-[9px] uppercase">Ruta / URL</span><span class="font-mono text-slate-600 font-semibold">${b.url || 'Sin especificar'}</span></div>
+                                                <div><span class="font-bold text-slate-400 block text-[9px] uppercase">Dificultad Principal</span><span class="text-slate-700 font-semibold">${b.action}</span></div>
+                                                <div><span class="font-bold text-slate-400 block text-[9px] uppercase">Comportamiento Real</span><span class="text-slate-700 leading-relaxed font-semibold">${b.actual}</span></div>
+                                                <div><span class="font-bold text-slate-400 block text-[9px] uppercase">Resultado Esperado</span><span class="text-slate-700 leading-relaxed font-semibold">${b.expected}</span></div>
+                                            </div>
+                                            <div class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                <div><span class="font-bold text-slate-400 block text-[9px] uppercase mb-1">Pasos para reproducir</span><pre class="text-[11px] leading-relaxed whitespace-pre-wrap font-mono text-slate-700 font-medium">${b.steps || 'N/A'}</pre></div>
+                                                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 text-[10px]">
+                                                    <div><span class="font-bold text-slate-400 block text-[8px] uppercase">Dispositivo</span><span class="text-slate-600 font-semibold">${b.device || 'N/A'}</span></div>
+                                                    <div><span class="font-bold text-slate-400 block text-[8px] uppercase">Reproducción</span><span class="text-slate-600 font-semibold">${b.reproducibility}</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                                ${state.bugs.length === 0 ? `
+                                    <div class="text-center py-12 text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                                        <span class="block text-2xl mb-1">🎉</span>
+                                        <p class="text-xs font-bold">¡Sin bugs registrados en esta sesión!</p>
+                                        <p class="text-[10px] text-slate-400 mt-1">Registra nuevos incidentes en el panel izquierdo.</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================================
+        // 5. UPDATE METRICS
+        // ============================================================
+        function updateMetrics() {
+            const bugCount = state.bugs.length;
+            const p0Count = state.bugs.filter(b => b.severity === 'P0').length;
+            document.getElementById('bug-counter').textContent = bugCount + ' Activos';
+            document.getElementById('bug-p0-counter').textContent = p0Count + ' críticos (P0)';
+            document.getElementById('bug-tab-counter').textContent = bugCount;
+
+            const susSamples = state.susHistory.length;
+            const progressPct = Math.min(100, (susSamples / APP_CONFIG.targetBetaTesters) * 100).toFixed(1);
+            document.getElementById('beta-target-label').textContent = APP_CONFIG.targetBetaTesters + ' Testers';
+            document.getElementById('beta-cohort-label').textContent = 'Cohorte actual: ' + APP_CONFIG.cohortSize + ' testers';
+            document.getElementById('beta-progress-label').textContent = 'Progreso beta: ' + progressPct + '% (' + susSamples + '/' + APP_CONFIG.targetBetaTesters + ' SUS)';
+
+            const avgScore = state.susHistory.length > 0 ? (state.susHistory.reduce((a, b) => a + b.score, 0) / state.susHistory.length).toFixed(1) : 0;
+            document.getElementById('avg-sus-score').textContent = avgScore + ' pts';
+            document.getElementById('sus-count-label').textContent = 'Basado en ' + state.susHistory.length + ' evaluaciones';
+            const avgElem = document.getElementById('avg-sus-score');
+            if (avgScore >= 68) {
+                avgElem.className = 'text-2xl font-black text-emerald-600';
+            } else {
+                avgElem.className = 'text-2xl font-black text-amber-500';
+            }
+        }
+
+        // ============================================================
+        // 6. EVENT BINDING
+        // ============================================================
+        function bindEvents() {
+            if (state.uiMode === 'public') {
+                document.getElementById('public-response-form')?.addEventListener('submit', publicResponseSubmitHandler);
+                return;
+            }
+
+            // Tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.removeEventListener('click', tabClickHandler);
+                btn.addEventListener('click', tabClickHandler);
+            });
+
+            // Form selectors
+            document.querySelectorAll('.form-selector').forEach(btn => {
+                btn.removeEventListener('click', formSelectorHandler);
+                btn.addEventListener('click', formSelectorHandler);
+            });
+
+            // Copy buttons (delegation)
+            document.querySelector('[data-copy-full]')?.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const form = getFormData(state.selectedForm);
+                const txt = form.sections.map(s => `${s.title}\n${s.questions.map(q => `${q.id}. ${q.text} (${q.type})`).join('\n')}`).join('\n\n');
+                copyText(txt);
+            });
+
+            document.querySelector('[data-share-form]')?.addEventListener('click', function(e) {
+                e.stopPropagation();
+                copyText(getShareUrlForCurrentForm());
+                showToast('Enlace para tester copiado.');
+            });
+
+            document.querySelectorAll('[data-copy-section]').forEach(btn => {
+                btn.removeEventListener('click', sectionCopyHandler);
+                btn.addEventListener('click', sectionCopyHandler);
+            });
+
+            document.querySelectorAll('[data-copy-question]').forEach(btn => {
+                btn.removeEventListener('click', questionCopyHandler);
+                btn.addEventListener('click', questionCopyHandler);
+            });
+
+            document.querySelectorAll('[data-copy-options]').forEach(btn => {
+                btn.removeEventListener('click', optionsCopyHandler);
+                btn.addEventListener('click', optionsCopyHandler);
+            });
+
+            // Tester checkboxes
+            document.querySelectorAll('[data-tester]').forEach(cb => {
+                cb.removeEventListener('change', testerCheckHandler);
+                cb.addEventListener('change', testerCheckHandler);
+            });
+
+            // Tester notes
+            document.querySelectorAll('[data-notes]').forEach(ta => {
+                ta.removeEventListener('input', notesInputHandler);
+                ta.addEventListener('input', notesInputHandler);
+            });
+
+            // SUS buttons
+            document.querySelectorAll('.sus-btn').forEach(btn => {
+                btn.removeEventListener('click', susBtnHandler);
+                btn.addEventListener('click', susBtnHandler);
+            });
+
+            // Save SUS
+            document.getElementById('save-sus-btn')?.addEventListener('click', saveSusHandler);
+            document.getElementById('sus-name-input')?.addEventListener('input', function() {
+                state.newSusName = this.value;
+                schedulePersist();
+            });
+
+            // Bug form
+            document.getElementById('bug-form')?.addEventListener('submit', bugFormSubmitHandler);
+
+            // Bug delete
+            document.querySelectorAll('[data-delete-bug]').forEach(btn => {
+                btn.removeEventListener('click', deleteBugHandler);
+                btn.addEventListener('click', deleteBugHandler);
+            });
+
+            // Export bugs
+            document.getElementById('export-bugs-btn')?.addEventListener('click', exportBugsHandler);
+
+            // Sync new bug fields
+            document.getElementById('bug-screen')?.addEventListener('input', function() { state.newBug.screen = this.value; schedulePersist(); });
+            document.getElementById('bug-url')?.addEventListener('input', function() { state.newBug.url = this.value; schedulePersist(); });
+            document.getElementById('bug-action')?.addEventListener('input', function() { state.newBug.action = this.value; schedulePersist(); });
+            document.getElementById('bug-actual')?.addEventListener('input', function() { state.newBug.actual = this.value; schedulePersist(); });
+            document.getElementById('bug-expected')?.addEventListener('input', function() { state.newBug.expected = this.value; schedulePersist(); });
+            document.getElementById('bug-steps')?.addEventListener('input', function() { state.newBug.steps = this.value; schedulePersist(); });
+            document.getElementById('bug-severity')?.addEventListener('change', function() { state.newBug.severity = this.value; schedulePersist(); });
+            document.getElementById('bug-repro')?.addEventListener('change', function() { state.newBug.reproducibility = this.value; schedulePersist(); });
+            document.getElementById('bug-device')?.addEventListener('input', function() { state.newBug.device = this.value; schedulePersist(); });
+        }
+
+        async function publicResponseSubmitHandler(e) {
+            e.preventDefault();
+            const form = e.currentTarget;
+            const submission = parseFormPayload(form);
+
+            ingestSubmission(submission);
+            schedulePersist();
+
+            try {
+                await sendSubmissionToEndpoint(submission);
+                showToast('Respuesta enviada y sincronizada.');
+            } catch (_err) {
+                showToast('Respuesta guardada localmente. Sincronización remota pendiente.');
+            }
+
+            form.reset();
+        }
+
+        // --- Event Handlers ---
+        function tabClickHandler(e) {
+            const tab = e.currentTarget.dataset.tab;
+            state.activeTab = tab;
+            schedulePersist();
+            renderTabs();
+        }
+
+        function formSelectorHandler(e) {
+            const form = e.currentTarget.dataset.form;
+            state.selectedForm = form;
+            schedulePersist();
+            renderTabs();
+        }
+
+        function sectionCopyHandler(e) {
+            const idx = parseInt(e.currentTarget.dataset.copySection);
+            const form = getFormData(state.selectedForm);
+            const section = form.sections[idx];
+            const txt = `${section.title}\n\n` + section.questions.map(q => `• Pregunta: ${q.text}\n  Tipo: ${q.type}\n  Opciones: ${q.options.join(', ') || 'Abierta'}`).join('\n\n');
+            copyText(txt);
+        }
+
+        function questionCopyHandler(e) {
+            const qid = e.currentTarget.dataset.copyQuestion;
+            const form = getFormData(state.selectedForm);
+            let qText = '';
+            form.sections.forEach(s => {
+                const q = s.questions.find(q => q.id === qid);
+                if (q) qText = q.text;
+            });
+            if (qText) copyText(qText);
+        }
+
+        function optionsCopyHandler(e) {
+            const qid = e.currentTarget.dataset.copyOptions;
+            const form = getFormData(state.selectedForm);
+            let opts = [];
+            form.sections.forEach(s => {
+                const q = s.questions.find(q => q.id === qid);
+                if (q) opts = q.options;
+            });
+            if (opts.length) copyText(opts.join('\n'));
+        }
+
+        function testerCheckHandler(e) {
+            const cb = e.currentTarget;
+            const testerId = parseInt(cb.dataset.tester);
+            const field = cb.dataset.field;
+            const tester = state.testers.find(t => t.id === testerId);
+            if (tester) {
+                tester.done[field] = cb.checked;
+                schedulePersist();
+                renderTabs(); // re-render para actualizar estado visual
+            }
+        }
+
+        function notesInputHandler(e) {
+            const ta = e.currentTarget;
+            const id = parseInt(ta.dataset.notes);
+            state.testerNotes[id] = ta.value;
+            schedulePersist();
+        }
+
+        function susBtnHandler(e) {
+            const btn = e.currentTarget;
+            const itemId = parseInt(btn.dataset.sus);
+            const value = parseInt(btn.dataset.value);
+            state.susRatings[itemId] = value;
+            schedulePersist();
+            renderTabs();
+        }
+
+        function saveSusHandler() {
+            const nameInput = document.getElementById('sus-name-input');
+            const name = nameInput ? nameInput.value.trim() : state.newSusName.trim();
+            if (!name) {
+                showToast('Ingresa un nombre para el tester.');
+                return;
+            }
+            const score = getSusScore(state.susRatings);
+            state.susHistory.push({
+                tester: name,
+                score: score,
+                date: new Date().toLocaleTimeString()
+            });
+            state.newSusName = '';
+            schedulePersist();
+            if (nameInput) nameInput.value = '';
+            showToast('SUS de ' + name + ' guardado.');
+            renderTabs();
+        }
+
+        function bugFormSubmitHandler(e) {
+            e.preventDefault();
+            const screen = document.getElementById('bug-screen')?.value.trim();
+            const actual = document.getElementById('bug-actual')?.value.trim();
+            if (!screen || !actual) {
+                showToast('Completa al menos la pantalla afectada y el comportamiento actual.');
+                return;
+            }
+            const newBug = {
+                id: Date.now(),
+                screen: screen,
+                url: document.getElementById('bug-url')?.value.trim() || '',
+                action: document.getElementById('bug-action')?.value.trim() || '',
+                actual: actual,
+                expected: document.getElementById('bug-expected')?.value.trim() || '',
+                steps: document.getElementById('bug-steps')?.value.trim() || '',
+                severity: document.getElementById('bug-severity')?.value || 'P1',
+                reproducibility: document.getElementById('bug-repro')?.value || 'Siempre',
+                device: document.getElementById('bug-device')?.value.trim() || ''
+            };
+            state.bugs = [newBug, ...state.bugs];
+            // Reset form fields in state
+            state.newBug = { screen: '', url: '', action: '', actual: '', expected: '', steps: '', severity: 'P1', reproducibility: 'Siempre', device: '' };
+            schedulePersist();
+            // Clear form inputs
+            document.getElementById('bug-form').reset();
+            showToast('¡Error QA registrado con éxito!');
+            renderTabs();
+        }
+
+        function deleteBugHandler(e) {
+            const id = parseInt(e.currentTarget.dataset.deleteBug);
+            state.bugs = state.bugs.filter(b => b.id !== id);
+            schedulePersist();
+            showToast('Bug eliminado de la sesión.');
+            renderTabs();
+        }
+
+        function exportBugsHandler() {
+            let md = `# Reporte de Bugs - QA Guruxy (dev.guruxy.com)\n\nGenerado el ${new Date().toLocaleDateString()}\n\n`;
+            state.bugs.forEach((b, index) => {
+                md += `### Bug #${index + 1}: [${b.severity}] ${b.screen}\n`;
+                md += `* **URL/Ruta:** \`${b.url || 'No especificado'}\`\n`;
+                md += `* **Dificultad principal:** ${b.action}\n`;
+                md += `* **Comportamiento Actual:** ${b.actual}\n`;
+                md += `* **Comportamiento Esperado:** ${b.expected}\n`;
+                md += `* **Pasos para Reproducir:**\n\`\`\`\n${b.steps || 'N/A'}\n\`\`\`\n`;
+                md += `* **Reproducibilidad:** ${b.reproducibility}\n`;
+                md += `* **Dispositivo/Ambiente:** ${b.device || 'N/A'}\n\n`;
+                md += `--- \n\n`;
+            });
+            copyText(md);
+            showToast('Copiado informe en formato Markdown!');
+        }
+
+        // ============================================================
+        // 7. INIT
+        // ============================================================
+        restoreStateFromStorage();
+        applyUrlState();
+        if (APP_CONFIG.remoteProvider === 'google-apps-script' && APP_CONFIG.submitEndpoint && !APP_CONFIG.fetchEndpoint) {
+            APP_CONFIG.fetchEndpoint = APP_CONFIG.submitEndpoint;
+        }
+        renderTabs();
+        fetchRemoteSubmissions();
+        if (APP_CONFIG.fetchEndpoint) {
+            setInterval(fetchRemoteSubmissions, APP_CONFIG.fetchIntervalMs);
+        }
+        if (didRestoreState) {
+            showToast('Sesión restaurada desde almacenamiento local.');
+        }
+    </script>
+</body>
+</html>

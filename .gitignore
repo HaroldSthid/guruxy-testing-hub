@@ -1,0 +1,6 @@
+# System generated files
+.system_generated/
+*.log
+.gemini/
+.agents/
+.atl/
