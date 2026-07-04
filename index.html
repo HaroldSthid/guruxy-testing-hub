@@ -714,8 +714,54 @@
                     </div>
                 `;
             }
+            if (question.type.includes('File Upload')) {
+                return `
+                    <div class="space-y-1.5">
+                        <input type="file" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" onchange="handleFileChange(event, '${key}')">
+                        <input type="hidden" name="${key}" id="hidden_${key}">
+                        <div id="status_${key}" class="text-[10px] text-slate-400 mt-1"></div>
+                    </div>
+                `;
+            }
             return `<input type="text" name="${key}" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Tu respuesta...">`;
         }
+
+        window.handleFileChange = function(event, key) {
+            const file = event.target.files[0];
+            const statusDiv = document.getElementById('status_' + key);
+            const hiddenInput = document.getElementById('hidden_' + key);
+            
+            if (!file) {
+                hiddenInput.value = '';
+                statusDiv.innerText = '';
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) {
+                statusDiv.innerHTML = '<span class="text-red-500 font-semibold">El archivo supera el límite de 10MB</span>';
+                event.target.value = '';
+                hiddenInput.value = '';
+                return;
+            }
+            
+            statusDiv.innerHTML = '<span class="text-indigo-600 font-semibold animate-pulse">Cargando archivo...</span>';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fileData = {
+                    filename: file.name,
+                    mimeType: file.type,
+                    base64: e.target.result
+                };
+                hiddenInput.value = JSON.stringify(fileData);
+                statusDiv.innerHTML = `<span class="text-emerald-600 font-semibold">✓ ${file.name} listo para subir</span>`;
+            };
+            reader.onerror = function() {
+                statusDiv.innerHTML = '<span class="text-red-500 font-semibold">Error al leer el archivo</span>';
+                hiddenInput.value = '';
+            };
+            reader.readAsDataURL(file);
+        };
 
         function renderPublicForm() {
             const formData = getFormData(state.selectedForm);
@@ -802,7 +848,15 @@
                     if (!Array.isArray(answers[base])) answers[base] = [];
                     answers[base].push(value);
                 } else {
-                    answers[key] = value;
+                    if (value && typeof value === 'string' && value.startsWith('{"filename":') && value.includes('"base64":')) {
+                        try {
+                            answers[key] = JSON.parse(value);
+                        } catch (e) {
+                            answers[key] = value;
+                        }
+                    } else {
+                        answers[key] = value;
+                    }
                 }
             }
 

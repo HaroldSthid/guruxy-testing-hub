@@ -18,12 +18,43 @@ function doPost(e) {
     }
 
     const payload = JSON.parse(raw);
+    
+    // Process files if present (uploads to Drive and replaces with URL)
+    processUploadedFiles(payload);
+
     const normalized = normalizeSubmission(payload);
     appendSubmission(normalized);
 
     return jsonResponse({ ok: true, id: normalized.id });
   } catch (err) {
     return jsonResponse({ ok: false, error: String(err) });
+  }
+}
+
+function processUploadedFiles(payload) {
+  if (!payload || !payload.answers) return;
+  
+  for (const key in payload.answers) {
+    const val = payload.answers[key];
+    if (val && typeof val === 'object' && val.base64 && val.filename) {
+      try {
+        let base64Data = val.base64;
+        const commaIdx = base64Data.indexOf(',');
+        if (commaIdx !== -1) {
+          base64Data = base64Data.substring(commaIdx + 1);
+        }
+        
+        const decoded = Utilities.base64Decode(base64Data);
+        const blob = Utilities.newBlob(decoded, val.mimeType, val.filename);
+        
+        const file = DriveApp.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        
+        payload.answers[key] = file.getUrl();
+      } catch (err) {
+        payload.answers[key] = "Error uploading file: " + String(err);
+      }
+    }
   }
 }
 
