@@ -295,7 +295,7 @@
             }, {
                 title: 'Sección A3 - Roles y Llamadas a la Acción',
                 questions: [
-                    { id: 'A3.1', text: 'Tarea: imagina que eres cliente y quieres contratar una consulta. ¿Dónde harías clic?', type: 'Paragraph', options: [], mediaUrl: 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-cta-extra-01.jpg', mediaType: 'image', mediaHint: 'Home - llamadas a la accion para cliente y guru' },
+                    { id: 'A3.1', text: 'Tarea: imagina que eres cliente y quieres contratar una consulta. ¿Dónde harías clic?', type: 'Paragraph', options: [], mediaUrls: ['https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-cta.jpg', 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-cta-extra-01.jpg'], mediaType: 'image', mediaHint: 'Home - llamadas a la accion para cliente y guru' },
                     { id: 'A3.2', text: '¿Identificó correctamente el camino del cliente?', type: 'Multiple Choice', options: ['Sí', 'Con duda', 'No'] },
                     { id: 'A3.3', text: 'Tarea: imagina que quieres ofrecer tus servicios como Gurú. ¿Dónde harías clic?', type: 'Paragraph', options: [] },
                     { id: 'A3.4', text: '¿Identificó correctamente el camino del Gurú?', type: 'Multiple Choice', options: ['Sí', 'Con duda', 'No'] },
@@ -900,28 +900,125 @@
             return !!(value.base64 && value.filename);
         }
 
-        window.openMediaModal = function(url, type, hint) {
-            const modal = document.getElementById('gx-media-modal');
+        function normalizeMediaItems(urlOrEncodedItems, type, hint) {
+            if (typeof urlOrEncodedItems === 'string' && typeof type === 'undefined' && typeof hint === 'undefined') {
+                try {
+                    const parsed = JSON.parse(decodeURIComponent(urlOrEncodedItems));
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        return parsed.filter(item => item && item.url).map(item => ({
+                            url: item.url,
+                            type: item.type || 'image',
+                            hint: item.hint || 'Referencia visual'
+                        }));
+                    }
+                } catch (_err) {
+                    // Fallback to single URL flow.
+                }
+            }
+
+            if (Array.isArray(urlOrEncodedItems)) {
+                return urlOrEncodedItems.filter(item => item && item.url).map(item => ({
+                    url: item.url,
+                    type: item.type || 'image',
+                    hint: item.hint || 'Referencia visual'
+                }));
+            }
+
+            if (typeof urlOrEncodedItems === 'string' && urlOrEncodedItems.trim()) {
+                return [{
+                    url: urlOrEncodedItems,
+                    type: type || 'image',
+                    hint: hint || 'Referencia visual'
+                }];
+            }
+
+            return [];
+        }
+
+        function renderActiveMediaItem() {
             const body = document.getElementById('gx-modal-body');
             const hintEl = document.getElementById('gx-modal-hint');
-            if (!modal || !body) return;
+            const items = state.activeMediaItems || [];
+            const index = Number(state.activeMediaIndex || 0);
+            if (!body || !hintEl || !items.length) return;
 
-            hintEl.textContent = hint || 'Referencia visual';
+            const item = items[index];
+            hintEl.textContent = `${item.hint || 'Referencia visual'} (${index + 1}/${items.length})`;
             body.innerHTML = '';
 
-            if (type === 'video') {
+            const wrapper = document.createElement('div');
+            wrapper.style.width = '100%';
+            wrapper.style.display = 'flex';
+            wrapper.style.flexDirection = 'column';
+            wrapper.style.gap = '10px';
+            wrapper.style.padding = '8px';
+
+            const mediaHost = document.createElement('div');
+            if (item.type === 'video') {
                 const video = document.createElement('video');
-                video.src = url;
+                video.src = item.url;
                 video.controls = true;
                 video.autoplay = false;
                 video.loop = false;
-                body.appendChild(video);
+                mediaHost.appendChild(video);
             } else {
                 const img = document.createElement('img');
-                img.src = url;
-                img.alt = hint || 'Referencia';
-                body.appendChild(img);
+                img.src = item.url;
+                img.alt = item.hint || 'Referencia';
+                mediaHost.appendChild(img);
             }
+            wrapper.appendChild(mediaHost);
+
+            if (items.length > 1) {
+                const nav = document.createElement('div');
+                nav.style.display = 'flex';
+                nav.style.justifyContent = 'space-between';
+                nav.style.gap = '8px';
+
+                const prev = document.createElement('button');
+                prev.type = 'button';
+                prev.className = 'gx-ref-btn';
+                prev.textContent = '< Anterior';
+                prev.onclick = window.showPrevMediaItem;
+
+                const next = document.createElement('button');
+                next.type = 'button';
+                next.className = 'gx-ref-btn';
+                next.textContent = 'Siguiente >';
+                next.onclick = window.showNextMediaItem;
+
+                nav.appendChild(prev);
+                nav.appendChild(next);
+                wrapper.appendChild(nav);
+            }
+
+            body.appendChild(wrapper);
+        }
+
+        window.showPrevMediaItem = function() {
+            const items = state.activeMediaItems || [];
+            if (items.length <= 1) return;
+            state.activeMediaIndex = (state.activeMediaIndex - 1 + items.length) % items.length;
+            renderActiveMediaItem();
+        };
+
+        window.showNextMediaItem = function() {
+            const items = state.activeMediaItems || [];
+            if (items.length <= 1) return;
+            state.activeMediaIndex = (state.activeMediaIndex + 1) % items.length;
+            renderActiveMediaItem();
+        };
+
+        window.openMediaModal = function(url, type, hint) {
+            const modal = document.getElementById('gx-media-modal');
+            if (!modal) return;
+
+            const items = normalizeMediaItems(url, type, hint);
+            if (!items.length) return;
+
+            state.activeMediaItems = items;
+            state.activeMediaIndex = 0;
+            renderActiveMediaItem();
 
             modal.classList.add('open');
         };
@@ -932,6 +1029,8 @@
             modal.classList.remove('open');
             const body = document.getElementById('gx-modal-body');
             if (body) body.innerHTML = '';
+            state.activeMediaItems = [];
+            state.activeMediaIndex = 0;
         };
 
         function renderPublicForm() {
@@ -965,8 +1064,26 @@
                                 <div class="p-4 space-y-4">
                                     ${section.questions.map((q, qIdx) => {
                                         const key = `q_${q.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-                                        const refBtn = q.mediaUrl ? `
-                                            <button type="button" class="gx-ref-btn" onclick="openMediaModal('${q.mediaUrl}','${q.mediaType || 'image'}','${(q.mediaHint || '').replace(/'/g, '')}')">&#128247; Ver referencia</button>
+                                        const mediaItems = Array.isArray(q.mediaItems)
+                                            ? q.mediaItems
+                                            : Array.isArray(q.mediaUrls)
+                                                ? q.mediaUrls.map((url, idx) => ({
+                                                    url,
+                                                    type: q.mediaType || 'image',
+                                                    hint: Array.isArray(q.mediaHints) && q.mediaHints[idx]
+                                                        ? q.mediaHints[idx]
+                                                        : (q.mediaHint || 'Referencia visual')
+                                                }))
+                                                : q.mediaUrl
+                                                    ? [{ url: q.mediaUrl, type: q.mediaType || 'image', hint: q.mediaHint || 'Referencia visual' }]
+                                                    : [];
+
+                                        const mediaPayload = mediaItems.length
+                                            ? encodeURIComponent(JSON.stringify(mediaItems)).replace(/'/g, '%27')
+                                            : '';
+
+                                        const refBtn = mediaItems.length ? `
+                                            <button type="button" class="gx-ref-btn" onclick="openMediaModal('${mediaPayload}')">&#128247; ${mediaItems.length > 1 ? `Ver referencias (${mediaItems.length})` : 'Ver referencia'}</button>
                                         ` : '';
                                         return `
                                             <div class="space-y-1.5">
