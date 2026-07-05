@@ -1,5 +1,7 @@
 const SHEET_NAME = 'submissions';
 const MAX_ITEMS = 500;
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'application/pdf'];
 
 function doGet() {
   try {
@@ -18,11 +20,15 @@ function doPost(e) {
     }
 
     const payload = JSON.parse(raw);
-    
-    // Process files if present (uploads to Drive and replaces with URL)
-    processUploadedFiles(payload);
-
     const normalized = normalizeSubmission(payload);
+
+    if (submissionExists(normalized.id)) {
+      return jsonResponse({ ok: true, id: normalized.id, duplicate: true });
+    }
+
+    // Process files if present (uploads to Drive and replaces with URL)
+    processUploadedFiles(normalized);
+
     appendSubmission(normalized);
 
     return jsonResponse({ ok: true, id: normalized.id });
@@ -36,26 +42,53 @@ function processUploadedFiles(payload) {
   
   for (const key in payload.answers) {
     const val = payload.answers[key];
-    if (val && typeof val === 'object' && val.base64 && val.filename) {
+    if (Array.isArray(val) && val.length > 0 && val.every(isUploadDescriptor)) {
       try {
-        let base64Data = val.base64;
-        const commaIdx = base64Data.indexOf(',');
-        if (commaIdx !== -1) {
-          base64Data = base64Data.substring(commaIdx + 1);
-        }
-        
-        const decoded = Utilities.base64Decode(base64Data);
-        const blob = Utilities.newBlob(decoded, val.mimeType, val.filename);
-        
-        const file = DriveApp.createFile(blob);
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        
-        payload.answers[key] = file.getUrl();
+        payload.answers[key] = val.map(uploadFileToDrive);
+      } catch (err) {
+        payload.answers[key] = "Error uploading files: " + String(err);
+      }
+      continue;
+    }
+
+    if (isUploadDescriptor(val)) {
+      try {
+        payload.answers[key] = uploadFileToDrive(val);
       } catch (err) {
         payload.answers[key] = "Error uploading file: " + String(err);
       }
     }
   }
+}
+
+function isUploadDescriptor(val) {
+  return !!(val && typeof val === 'object' && val.base64 && val.filename);
+}
+
+function uploadFileToDrive(fileDescriptor) {
+  let base64Data = String(fileDescriptor.base64 || '');
+  const commaIdx = base64Data.indexOf(',');
+  if (commaIdx !== -1) {
+    base64Data = base64Data.substring(commaIdx + 1);
+  }
+
+  const estimatedBytes = Math.floor((base64Data.length * 3) / 4);
+  if (estimatedBytes > MAX_UPLOAD_BYTES) {
+    throw new Error('file_too_large_' + MAX_UPLOAD_BYTES);
+  }
+
+  const mimeType = String(fileDescriptor.mimeType || '').toLowerCase();
+  if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+    throw new Error('invalid_mime_type_' + mimeType);
+  }
+
+  const decoded = Utilities.base64Decode(base64Data);
+  const safeFileName = String(fileDescriptor.filename || 'upload.bin').replace(/[\r\n]/g, ' ').slice(0, 120);
+  const blob = Utilities.newBlob(decoded, mimeType, safeFileName);
+
+  const file = DriveApp.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return file.getUrl();
 }
 
 function normalizeSubmission(payload) {
@@ -88,6 +121,17 @@ function appendSubmission(submission) {
     submission.bugActual,
     JSON.stringify(submission.answers)
   ]);
+}
+
+function submissionExists(submissionId) {
+  if (!submissionId) return false;
+  const sheet = ensureSheet();
+  const found = sheet
+    .getRange('A:A')
+    .createTextFinder(String(submissionId))
+    .matchEntireCell(true)
+    .findNext();
+  return !!found;
 }
 
 function readSubmissions() {

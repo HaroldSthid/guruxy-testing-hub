@@ -11,6 +11,7 @@
             remoteProvider: 'google-apps-script',
             submitEndpoint: 'https://script.google.com/macros/s/AKfycbxNDECudyg8eH56V6qA0BQStHRY_HYDihw6HNuzhcefjBsLFwg85hQFHEXN3Jn_XDQ/exec',
             fetchEndpoint: 'https://script.google.com/macros/s/AKfycbxNDECudyg8eH56V6qA0BQStHRY_HYDihw6HNuzhcefjBsLFwg85hQFHEXN3Jn_XDQ/exec',
+            publicHubUrl: 'https://haroldsthid.github.io/guruxy-testing-hub/',
             fetchIntervalMs: 30000
         };
     </script>
@@ -272,7 +273,7 @@
                 title: 'Sección A1 - Primera Impresión',
                 instruction: 'Nota para moderador: no expliques qué es Guruxy antes de esta tarea para medir comprensión espontánea.',
                 questions: [
-                    { id: 'A1.1', text: 'Mira el Home durante 10 segundos. ¿Qué crees que hace Guruxy?', type: 'Paragraph', options: [], mediaUrl: 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-reference.jpg', mediaType: 'image', mediaHint: 'Home de Guruxy — pantalla que está evaluando el tester' },
+                    { id: 'A1.1', text: 'Mira el Home durante 10 segundos. ¿Qué crees que hace Guruxy?', type: 'Paragraph', options: [], mediaUrl: 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/primera-impresion.jpg', mediaType: 'image', mediaHint: 'Home de Guruxy — pantalla que está evaluando el tester' },
                     { id: 'A1.2', text: '¿El tester entendió la propuesta de valor?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
                     { id: 'A1.3', text: '¿Qué conceptos mencionó espontáneamente?', type: 'Checkboxes', options: ['Expertos/Gurús', 'Clientes', 'Consultas', 'Agenda', 'Pagos', 'Videollamada', 'Marketplace', 'Servicios', 'No entendió'] },
                     { id: 'A1.4', text: 'Del 1 al 5, ¿qué tan claro fue el mensaje principal?', type: 'Linear Scale (1-5)', options: ['1 (Nada claro)', '5 (Muy claro)'] },
@@ -282,7 +283,7 @@
                 title: 'Sección A2 - Navegación y Búsqueda',
                 instruction: 'Nota para moderador: pide al tester encontrar algo, no le digas exactamente dónde hacer clic.',
                 questions: [
-                    { id: 'A2.1', text: 'Tarea: busca dónde encontrarías un especialista. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                    { id: 'A2.1', text: 'Tarea: busca dónde encontrarías un especialista. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'], mediaUrl: 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-navigation.jpg', mediaType: 'image', mediaHint: 'Home - zona de navegacion y busqueda de especialistas' },
                     { id: 'A2.2', text: '¿Encontró el buscador principal?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
                     { id: 'A2.3', text: '¿Entendió la diferencia entre Todos, Gurús y Especialidades?', type: 'Linear Scale (1-5)', options: ['1 (Nada claro)', '5 (Muy claro)'] },
                     { id: 'A2.4', text: '¿Qué nombre sería más claro para esas opciones?', type: 'Paragraph', options: [] },
@@ -293,7 +294,7 @@
             }, {
                 title: 'Sección A3 - Roles y Llamadas a la Acción',
                 questions: [
-                    { id: 'A3.1', text: 'Tarea: imagina que eres cliente y quieres contratar una consulta. ¿Dónde harías clic?', type: 'Paragraph', options: [] },
+                    { id: 'A3.1', text: 'Tarea: imagina que eres cliente y quieres contratar una consulta. ¿Dónde harías clic?', type: 'Paragraph', options: [], mediaUrl: 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-cta.jpg', mediaType: 'image', mediaHint: 'Home - llamadas a la accion para cliente y guru' },
                     { id: 'A3.2', text: '¿Identificó correctamente el camino del cliente?', type: 'Multiple Choice', options: ['Sí', 'Con duda', 'No'] },
                     { id: 'A3.3', text: 'Tarea: imagina que quieres ofrecer tus servicios como Gurú. ¿Dónde harías clic?', type: 'Paragraph', options: [] },
                     { id: 'A3.4', text: '¿Identificó correctamente el camino del Gurú?', type: 'Multiple Choice', options: ['Sí', 'Con duda', 'No'] },
@@ -302,7 +303,7 @@
             }, {
                 title: 'Sección A4 - Confianza y Evidencia',
                 questions: [
-                    { id: 'A4.1', text: 'Del 1 al 5, ¿qué tanta confianza genera el Home?', type: 'Linear Scale (1-5)', options: ['1 (Poca confianza)', '5 (Mucha confianza)'] },
+                    { id: 'A4.1', text: 'Del 1 al 5, ¿qué tanta confianza genera el Home?', type: 'Linear Scale (1-5)', options: ['1 (Poca confianza)', '5 (Mucha confianza)'], mediaUrl: 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-trust.jpg', mediaType: 'image', mediaHint: 'Home - elementos de confianza y evidencia visual' },
                     { id: 'A4.2', text: '¿Qué parte genera más confianza?', type: 'Paragraph', options: [] },
                     { id: 'A4.3', text: '¿Qué parte genera menos confianza?', type: 'Paragraph', options: [] },
                     { id: 'A4.4', text: '¿Encontraste algún bug visual o funcional?', type: 'Multiple Choice', options: ['Sí', 'No'] },
@@ -538,6 +539,7 @@
             remoteProvider: 'google-apps-script',
             submitEndpoint: '',
             fetchEndpoint: '',
+            publicHubUrl: '',
             fetchIntervalMs: 60000,
             remoteApiKey: ''
         };
@@ -715,6 +717,15 @@
             return FORM_C_DATA;
         }
 
+        function sanitizeUserText(value, maxLen = 2000) {
+            if (value === null || value === undefined) return '';
+            const clean = String(value)
+                .replace(/[<>]/g, '')
+                .replace(/[\u0000-\u001F\u007F]/g, ' ')
+                .trim();
+            return clean.slice(0, maxLen);
+        }
+
         function getShareUrlForCurrentForm() {
             const url = new URL(window.location.href);
             url.searchParams.set('tab', 'forms');
@@ -814,51 +825,79 @@
             if (question.type.includes('File Upload')) {
                 return `
                     <div class="space-y-1.5">
-                        <input type="file" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" onchange="handleFileChange(event, '${key}')">
+                        <input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf" multiple class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" onchange="handleFileChange(event, '${key}')">
                         <input type="hidden" name="${key}" id="hidden_${key}">
-                        <div id="status_${key}" class="text-[10px] text-slate-400 mt-1"></div>
+                        <div id="status_${key}" class="text-[10px] text-slate-400 mt-1">Puedes subir multiples imagenes, video (mp4/webm) o PDF. Max 10MB por archivo.</div>
                     </div>
                 `;
             }
             return `<input type="text" name="${key}" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Tu respuesta...">`;
         }
 
-        window.handleFileChange = function(event, key) {
-            const file = event.target.files[0];
+        window.handleFileChange = async function(event, key) {
+            const files = Array.from(event.target.files || []);
             const statusDiv = document.getElementById('status_' + key);
             const hiddenInput = document.getElementById('hidden_' + key);
+            const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'application/pdf']);
+            const maxBytes = 10 * 1024 * 1024;
             
-            if (!file) {
+            if (!files.length) {
                 hiddenInput.value = '';
                 statusDiv.innerText = '';
                 return;
             }
-            
-            if (file.size > 10 * 1024 * 1024) {
-                statusDiv.innerHTML = '<span class="text-red-500 font-semibold">El archivo supera el límite de 10MB</span>';
+
+            const invalidTypes = files.filter(file => !allowedMimeTypes.has(String(file.type || '').toLowerCase()));
+            if (invalidTypes.length) {
+                statusDiv.innerHTML = '<span class="text-red-500 font-semibold">Hay archivos con formato no permitido</span>';
                 event.target.value = '';
                 hiddenInput.value = '';
                 return;
             }
-            
+
+            const oversized = files.filter(file => file.size > maxBytes);
+            if (oversized.length) {
+                statusDiv.innerHTML = '<span class="text-red-500 font-semibold">Uno o más archivos superan 10MB</span>';
+                event.target.value = '';
+                hiddenInput.value = '';
+                return;
+            }
+
             statusDiv.innerHTML = '<span class="text-indigo-600 font-semibold animate-pulse">Cargando archivo...</span>';
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const fileData = {
-                    filename: file.name,
-                    mimeType: file.type,
-                    base64: e.target.result
-                };
-                hiddenInput.value = JSON.stringify(fileData);
-                statusDiv.innerHTML = `<span class="text-emerald-600 font-semibold">✓ ${file.name} listo para subir</span>`;
-            };
-            reader.onerror = function() {
+
+            try {
+                const filePayloads = await Promise.all(files.map((file) => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            resolve({
+                                filename: file.name,
+                                mimeType: file.type,
+                                base64: e.target.result
+                            });
+                        };
+                        reader.onerror = function() {
+                            reject(new Error('read_failed'));
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }));
+
+                hiddenInput.value = JSON.stringify(filePayloads);
+                statusDiv.innerHTML = `<span class="text-emerald-600 font-semibold">✓ ${files.length} archivo(s) listo(s) para subir</span>`;
+            } catch (_err) {
                 statusDiv.innerHTML = '<span class="text-red-500 font-semibold">Error al leer el archivo</span>';
                 hiddenInput.value = '';
-            };
-            reader.readAsDataURL(file);
+            }
         };
+
+        function isEncodedFilePayload(value) {
+            if (!value || typeof value !== 'object') return false;
+            if (Array.isArray(value)) {
+                return value.length > 0 && value.every(item => item && typeof item === 'object' && item.base64 && item.filename);
+            }
+            return !!(value.base64 && value.filename);
+        }
 
         window.openMediaModal = function(url, type, hint) {
             const modal = document.getElementById('gx-media-modal');
@@ -980,29 +1019,35 @@
                 if (key.endsWith('[]')) {
                     const base = key.replace(/\[\]$/, '');
                     if (!Array.isArray(answers[base])) answers[base] = [];
-                    answers[base].push(value);
+                    answers[base].push(sanitizeUserText(value));
                 } else {
-                    if (value && typeof value === 'string' && value.startsWith('{"filename":') && value.includes('"base64":')) {
-                        try {
-                            answers[key] = JSON.parse(value);
-                        } catch (e) {
-                            answers[key] = value;
+                    if (value && typeof value === 'string') {
+                        const trimmed = value.trim();
+                        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                            try {
+                                const parsed = JSON.parse(trimmed);
+                                if (isEncodedFilePayload(parsed)) {
+                                    answers[key] = parsed;
+                                    continue;
+                                }
+                            } catch (_err) {
+                                // Ignore parse errors and fallback to text sanitization.
+                            }
                         }
-                    } else {
-                        answers[key] = value;
                     }
+                    answers[key] = sanitizeUserText(value);
                 }
             }
 
             return {
                 id: 'sub-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
                 form: state.selectedForm,
-                testerName: answers.meta_tester_name || 'Tester',
-                testerEmail: answers.meta_tester_email || '',
+                testerName: sanitizeUserText(answers.meta_tester_name || 'Tester', 120),
+                testerEmail: sanitizeUserText(answers.meta_tester_email || '', 180),
                 submittedAt: new Date().toISOString(),
                 susScore: answers.meta_sus_score ? parseFloat(answers.meta_sus_score) : null,
-                bugSeverity: answers.meta_bug_severity || '',
-                bugActual: answers.meta_bug_actual || '',
+                bugSeverity: sanitizeUserText(answers.meta_bug_severity || '', 20),
+                bugActual: sanitizeUserText(answers.meta_bug_actual || '', 4000),
                 answers
             };
         }
@@ -1011,27 +1056,34 @@
             if (!submission || !submission.id) return;
             if (state.ingestedSubmissionIds.includes(submission.id)) return;
 
-            state.publicResponses.unshift(submission);
-            state.ingestedSubmissionIds.push(submission.id);
+            const safeSubmission = {
+                ...submission,
+                testerName: sanitizeUserText(submission.testerName || 'Tester', 120),
+                bugSeverity: sanitizeUserText(submission.bugSeverity || '', 20),
+                bugActual: sanitizeUserText(submission.bugActual || '', 4000)
+            };
 
-            if (typeof submission.susScore === 'number' && !Number.isNaN(submission.susScore)) {
+            state.publicResponses.unshift(safeSubmission);
+            state.ingestedSubmissionIds.push(safeSubmission.id);
+
+            if (typeof safeSubmission.susScore === 'number' && !Number.isNaN(safeSubmission.susScore)) {
                 state.susHistory.push({
-                    tester: submission.testerName + ' (web)',
-                    score: submission.susScore,
-                    date: new Date(submission.submittedAt || Date.now()).toLocaleString()
+                    tester: safeSubmission.testerName + ' (web)',
+                    score: safeSubmission.susScore,
+                    date: new Date(safeSubmission.submittedAt || Date.now()).toLocaleString()
                 });
             }
 
-            if (submission.bugActual && submission.bugActual.trim()) {
+            if (safeSubmission.bugActual && safeSubmission.bugActual.trim()) {
                 state.bugs = [{
                     id: Date.now(),
                     screen: 'Reporte Web Tester',
                     url: '/public-form',
                     action: 'Respuesta de formulario público',
-                    actual: submission.bugActual.trim(),
+                    actual: safeSubmission.bugActual.trim(),
                     expected: 'No aplica',
                     steps: 'Reporte enviado desde enlace público',
-                    severity: submission.bugSeverity || 'P2',
+                    severity: safeSubmission.bugSeverity || 'P2',
                     reproducibility: 'No especificado',
                     device: 'No especificado'
                 }, ...state.bugs];
@@ -1699,6 +1751,11 @@
             e.preventDefault();
             const form = e.currentTarget;
             const submission = parseFormPayload(form);
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.classList.add('opacity-60', 'cursor-not-allowed');
+            }
 
             ingestSubmission(submission);
             schedulePersist();
@@ -1706,11 +1763,15 @@
             try {
                 await sendSubmissionToEndpoint(submission);
                 showToast('Respuesta enviada y sincronizada.');
+                form.reset();
             } catch (_err) {
                 showToast('Respuesta guardada localmente. Sincronización remota pendiente.');
+            } finally {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('opacity-60', 'cursor-not-allowed');
+                }
             }
-
-            form.reset();
         }
 
         // --- Event Handlers ---
@@ -1788,7 +1849,7 @@
 
         function saveSusHandler() {
             const nameInput = document.getElementById('sus-name-input');
-            const name = nameInput ? nameInput.value.trim() : state.newSusName.trim();
+            const name = sanitizeUserText(nameInput ? nameInput.value.trim() : state.newSusName.trim(), 120);
             if (!name) {
                 showToast('Ingresa un nombre para el tester.');
                 return;
@@ -1808,8 +1869,8 @@
 
         function bugFormSubmitHandler(e) {
             e.preventDefault();
-            const screen = document.getElementById('bug-screen')?.value.trim();
-            const actual = document.getElementById('bug-actual')?.value.trim();
+            const screen = sanitizeUserText(document.getElementById('bug-screen')?.value.trim(), 180);
+            const actual = sanitizeUserText(document.getElementById('bug-actual')?.value.trim(), 4000);
             if (!screen || !actual) {
                 showToast('Completa al menos la pantalla afectada y el comportamiento actual.');
                 return;
@@ -1817,14 +1878,14 @@
             const newBug = {
                 id: Date.now(),
                 screen: screen,
-                url: document.getElementById('bug-url')?.value.trim() || '',
-                action: document.getElementById('bug-action')?.value.trim() || '',
+                url: sanitizeUserText(document.getElementById('bug-url')?.value.trim() || '', 240),
+                action: sanitizeUserText(document.getElementById('bug-action')?.value.trim() || '', 240),
                 actual: actual,
-                expected: document.getElementById('bug-expected')?.value.trim() || '',
-                steps: document.getElementById('bug-steps')?.value.trim() || '',
-                severity: document.getElementById('bug-severity')?.value || 'P1',
-                reproducibility: document.getElementById('bug-repro')?.value || 'Siempre',
-                device: document.getElementById('bug-device')?.value.trim() || ''
+                expected: sanitizeUserText(document.getElementById('bug-expected')?.value.trim() || '', 4000),
+                steps: sanitizeUserText(document.getElementById('bug-steps')?.value.trim() || '', 4000),
+                severity: sanitizeUserText(document.getElementById('bug-severity')?.value || 'P1', 20),
+                reproducibility: sanitizeUserText(document.getElementById('bug-repro')?.value || 'Siempre', 40),
+                device: sanitizeUserText(document.getElementById('bug-device')?.value.trim() || '', 240)
             };
             state.bugs = [newBug, ...state.bugs];
             // Reset form fields in state
