@@ -63,6 +63,103 @@
         body.public-mode .qa-admin-only {
             display: none;
         }
+
+        /* ── Media Reference Modal ── */
+        #gx-media-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            padding: 24px;
+        }
+        #gx-media-modal.open {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+        #gx-media-modal .gx-modal-card {
+            background: #1e1e2e;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            max-width: 860px;
+            width: 100%;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+        }
+        #gx-media-modal .gx-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        #gx-media-modal .gx-modal-hint {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 0.03em;
+        }
+        #gx-media-modal .gx-modal-close {
+            background: rgba(255,255,255,0.08);
+            border: none;
+            border-radius: 8px;
+            color: rgba(255,255,255,0.7);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 10px;
+            transition: background 0.15s;
+        }
+        #gx-media-modal .gx-modal-close:hover {
+            background: rgba(255,255,255,0.18);
+        }
+        #gx-media-modal .gx-modal-body {
+            max-height: 70vh;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        #gx-media-modal img {
+            width: 100%;
+            display: block;
+            object-fit: contain;
+            max-height: 70vh;
+        }
+        #gx-media-modal video {
+            width: 100%;
+            max-height: 70vh;
+            display: block;
+            outline: none;
+        }
+        .gx-ref-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #6366f1;
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 6px;
+            padding: 2px 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+        .gx-ref-btn:hover {
+            background: #6366f1;
+            color: #fff;
+            border-color: #6366f1;
+        }
     </style>
 </head>
 <body>
@@ -175,7 +272,7 @@
                 title: 'Sección A1 - Primera Impresión',
                 instruction: 'Nota para moderador: no expliques qué es Guruxy antes de esta tarea para medir comprensión espontánea.',
                 questions: [
-                    { id: 'A1.1', text: 'Mira el Home durante 10 segundos. ¿Qué crees que hace Guruxy?', type: 'Paragraph', options: [] },
+                    { id: 'A1.1', text: 'Mira el Home durante 10 segundos. ¿Qué crees que hace Guruxy?', type: 'Paragraph', options: [], mediaUrl: 'https://dev.guruxy.com', mediaType: 'image', mediaHint: 'Home de Guruxy — pantalla que está evaluando el tester' },
                     { id: 'A1.2', text: '¿El tester entendió la propuesta de valor?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
                     { id: 'A1.3', text: '¿Qué conceptos mencionó espontáneamente?', type: 'Checkboxes', options: ['Expertos/Gurús', 'Clientes', 'Consultas', 'Agenda', 'Pagos', 'Videollamada', 'Marketplace', 'Servicios', 'No entendió'] },
                     { id: 'A1.4', text: 'Del 1 al 5, ¿qué tan claro fue el mensaje principal?', type: 'Linear Scale (1-5)', options: ['1 (Nada claro)', '5 (Muy claro)'] },
@@ -763,6 +860,40 @@
             reader.readAsDataURL(file);
         };
 
+        window.openMediaModal = function(url, type, hint) {
+            const modal = document.getElementById('gx-media-modal');
+            const body = document.getElementById('gx-modal-body');
+            const hintEl = document.getElementById('gx-modal-hint');
+            if (!modal || !body) return;
+
+            hintEl.textContent = hint || 'Referencia visual';
+            body.innerHTML = '';
+
+            if (type === 'video') {
+                const video = document.createElement('video');
+                video.src = url;
+                video.controls = true;
+                video.autoplay = false;
+                video.loop = false;
+                body.appendChild(video);
+            } else {
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = hint || 'Referencia';
+                body.appendChild(img);
+            }
+
+            modal.classList.add('open');
+        };
+
+        window.closeMediaModal = function() {
+            const modal = document.getElementById('gx-media-modal');
+            if (!modal) return;
+            modal.classList.remove('open');
+            const body = document.getElementById('gx-modal-body');
+            if (body) body.innerHTML = '';
+        };
+
         function renderPublicForm() {
             const formData = getFormData(state.selectedForm);
             return `
@@ -794,9 +925,12 @@
                                 <div class="p-4 space-y-4">
                                     ${section.questions.map((q, qIdx) => {
                                         const key = `q_${q.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+                                        const refBtn = q.mediaUrl ? `
+                                            <button type="button" class="gx-ref-btn" onclick="openMediaModal('${q.mediaUrl}','${q.mediaType || 'image'}','${(q.mediaHint || '').replace(/'/g, '')}')">&#128247; Ver referencia</button>
+                                        ` : '';
                                         return `
                                             <div class="space-y-1.5">
-                                                <label class="text-sm font-semibold text-slate-800">${q.id}. ${q.text}</label>
+                                                <label class="text-sm font-semibold text-slate-800">${q.id}. ${q.text}${refBtn}</label>
                                                 <div class="text-[11px] text-slate-400 mb-1">${q.type}</div>
                                                 ${renderQuestionInput(q, key)}
                                             </div>
@@ -1743,6 +1877,24 @@
         if (didRestoreState) {
             showToast('Sesión restaurada desde almacenamiento local.');
         }
+    </script>
+
+    <!-- Media Reference Modal -->
+    <div id="gx-media-modal" onclick="if(event.target===this)closeMediaModal()">
+        <div class="gx-modal-card">
+            <div class="gx-modal-header">
+                <span class="gx-modal-hint" id="gx-modal-hint">Referencia visual</span>
+                <button class="gx-modal-close" onclick="closeMediaModal()" title="Cerrar">&#x2715;</button>
+            </div>
+            <div class="gx-modal-body" id="gx-modal-body"></div>
+        </div>
+        <p style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:8px">Presioná ESC o hacé clic fuera para cerrar</p>
+    </div>
+
+    <script>
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeMediaModal();
+        });
     </script>
 </body>
 </html>
