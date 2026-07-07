@@ -106,7 +106,13 @@ Requisitos:
 
 ## Verificación rápida de contrato frontend
 - Ejecutar `node .\scripts\verify-frontend-contracts.mjs` para validar el contrato puro de referencia visual y parsing de respuestas.
+- Ejecutar `node .\scripts\validate-forms-catalog.mjs` antes de editar preguntas/opciones en `forms/catalog.js`.
 - Esto no toca producción ni requiere dependencias extra.
+
+## Edición versionada de formularios
+- Las preguntas/opciones activas viven en `forms/catalog.js`.
+- Ver guía operativa: `forms/README.md`.
+- Si una versión ya tiene respuestas de testers, crear una nueva versión en lugar de editarla en sitio.
 
 ## Catálogo versionado de formularios
 - Las definiciones de Forms A/B/C viven en `forms/catalog.js` como catálogo versionado.
