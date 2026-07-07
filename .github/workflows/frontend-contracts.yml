@@ -17,5 +17,8 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Validate forms catalog
+        run: node scripts/validate-forms-catalog.mjs
+
       - name: Run frontend contract checks
         run: node scripts/verify-frontend-contracts.mjs
