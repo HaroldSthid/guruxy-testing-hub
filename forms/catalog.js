@@ -2,12 +2,12 @@ window.GX_FORM_CATALOG = {
   catalogVersion: '2026-07-07',
   forms: {
     A: {
-      activeVersion: 'v1',
+      activeVersion: 'v2',
       versions: {
         v1: {
           id: 'v1',
           label: 'Initial extracted version',
-          status: 'active',
+          status: 'archived',
           form: {
             id: 'form-a',
             title: 'Formulario A - Home Guruxy',
@@ -28,6 +28,69 @@ window.GX_FORM_CATALOG = {
               questions: [
                 { id: 'A1.1', text: 'Mira el Home durante 10 segundos. ¿Qué crees que hace Guruxy?', type: 'Paragraph', options: [], mediaUrl: 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/primera-impresion.jpg', mediaType: 'image', mediaHint: 'Home de Guruxy — pantalla que está evaluando el tester' },
                 { id: 'A1.2', text: '¿El tester entendió la propuesta de valor?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
+                { id: 'A1.3', text: '¿Qué conceptos mencionó espontáneamente?', type: 'Checkboxes', options: ['Expertos/Gurús', 'Clientes', 'Consultas', 'Agenda', 'Pagos', 'Videollamada', 'Marketplace', 'Servicios', 'No entendió'] },
+                { id: 'A1.4', text: 'Del 1 al 5, ¿qué tan claro fue el mensaje principal?', type: 'Linear Scale (1-5)', options: ['1 (Nada claro)', '5 (Muy claro)'] },
+                { id: 'A1.5', text: '¿Qué frase o elemento del Home le ayudó más a entender?', type: 'Paragraph', options: [] }
+              ]
+            }, {
+              title: 'Sección A2 - Navegación y Búsqueda',
+              instruction: 'Nota para moderador: pide al tester encontrar algo, no le digas exactamente dónde hacer clic.',
+              questions: [
+                { id: 'A2.1', text: 'Tarea: busca dónde encontrarías un especialista. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'], mediaUrl: 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-navigation.jpg', mediaType: 'image', mediaHint: 'Home - zona de navegacion y busqueda de especialistas' },
+                { id: 'A2.2', text: '¿Encontró el buscador principal?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                { id: 'A2.3', text: '¿Entendió la diferencia entre Todos, Gurús y Especialidades?', type: 'Linear Scale (1-5)', options: ['1 (Nada claro)', '5 (Muy claro)'] },
+                { id: 'A2.4', text: '¿Qué nombre sería más claro para esas opciones?', type: 'Paragraph', options: [] },
+                { id: 'A2.5', text: 'Tarea: explora una categoría. ¿Lo logró?', type: 'Multiple Choice', options: ['Sí', 'Con ayuda', 'No'] },
+                { id: 'A2.6', text: 'En mobile, ¿entendió que la barra de categorías se mueve horizontalmente?', type: 'Multiple Choice', options: ['Sí', 'No', 'No aplica'] },
+                { id: 'A2.7', text: '¿Las categorías de colores ayudan o distraen?', type: 'Multiple Choice', options: ['Ayudan', 'Distraen', 'Neutro'] }
+              ]
+            }, {
+              title: 'Sección A3 - Roles y Llamadas a la Acción',
+              questions: [
+                { id: 'A3.1', text: 'Tarea: imagina que eres cliente y quieres contratar una consulta. ¿Dónde harías clic?', type: 'Paragraph', options: [], mediaUrls: ['https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-cta.jpg', 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-cta-extra-01.jpg'], mediaType: 'image', mediaHint: 'Home - llamadas a la accion para cliente y guru' },
+                { id: 'A3.2', text: '¿Identificó correctamente el camino del cliente?', type: 'Multiple Choice', options: ['Sí', 'Con duda', 'No'] },
+                { id: 'A3.3', text: 'Tarea: imagina que quieres ofrecer tus servicios como Gurú. ¿Dónde harías clic?', type: 'Paragraph', options: [] },
+                { id: 'A3.4', text: '¿Identificó correctamente el camino del Gurú?', type: 'Multiple Choice', options: ['Sí', 'Con duda', 'No'] },
+                { id: 'A3.5', text: '¿Los botones principales tienen jerarquía clara?', type: 'Linear Scale (1-5)', options: ['1 (Confuso)', '5 (Muy claro)'] }
+              ]
+            }, {
+              title: 'Sección A4 - Confianza y Evidencia',
+              questions: [
+                { id: 'A4.1', text: 'Del 1 al 5, ¿qué tanta confianza genera el Home?', type: 'Linear Scale (1-5)', options: ['1 (Poca confianza)', '5 (Mucha confianza)'], mediaUrls: ['https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-trust.jpg', 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-trust-extra-01.jpg', 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/home-trust-extra-02.jpg'], mediaType: 'image', mediaHint: 'Home - elementos de confianza y evidencia visual' },
+                { id: 'A4.2', text: '¿Qué parte genera más confianza?', type: 'Paragraph', options: [] },
+                { id: 'A4.3', text: '¿Qué parte genera menos confianza?', type: 'Paragraph', options: [] },
+                { id: 'A4.4', text: '¿Encontraste algún bug visual o funcional?', type: 'Multiple Choice', options: ['Sí', 'No'] },
+                { id: 'A4.5', text: 'Sube evidencia si aplica: screenshot o video', type: 'File Upload', options: [] },
+                { id: 'A4.6', text: 'Severidad del principal hallazgo', type: 'Dropdown', options: ['Sin hallazgo', 'P0 - Bloqueador crítico', 'P1 - Fricción alta', 'P2 - Fricción media', 'P3 - Mejora menor'] },
+                { id: 'A4.7', text: 'Comentario final del Home', type: 'Paragraph', options: [] }
+              ]
+            }] 
+          }
+        },
+        v2: {
+          id: 'v2',
+          label: 'Clarify A1.2 wording',
+          status: 'active',
+          form: {
+            id: 'form-a',
+            title: 'Formulario A - Home Guruxy',
+            duration: '12 a 18 minutos',
+            target: 'Cualquier tester (incluso sin conocimiento previo)',
+            sections: [{
+              title: 'Sección A0 - Datos Rápidos',
+              questions: [
+                { id: 'A0.1', text: 'Nombre del tester', type: 'Short Text', options: [] },
+                { id: 'A0.2', text: 'Dispositivo usado', type: 'Multiple Choice', options: ['Desktop', 'Mobile', 'Tablet'] },
+                { id: 'A0.3', text: 'Navegador', type: 'Multiple Choice', options: ['Chrome', 'Safari', 'Brave', 'Edge', 'Firefox', 'Otro'] },
+                { id: 'A0.4', text: 'Nivel digital', type: 'Multiple Choice', options: ['Bajo', 'Medio', 'Alto'] },
+                { id: 'A0.5', text: '¿La prueba fue moderada?', type: 'Multiple Choice', options: ['Sí', 'No'] }
+              ]
+            }, {
+              title: 'Sección A1 - Primera Impresión',
+              instruction: 'Nota para moderador: no expliques qué es Guruxy antes de esta tarea para medir comprensión espontánea.',
+              questions: [
+                { id: 'A1.1', text: 'Mira el Home durante 10 segundos. ¿Qué crees que hace Guruxy?', type: 'Paragraph', options: [], mediaUrl: 'https://raw.githubusercontent.com/HaroldSthid/guruxy-testing-hub/main/assets/img/primera-impresion.jpg', mediaType: 'image', mediaHint: 'Home de Guruxy — pantalla que está evaluando el tester' },
+                { id: 'A1.2', text: '¿El tester entendió con claridad qué problema resuelve Guruxy?', type: 'Multiple Choice', options: ['Sí', 'Parcialmente', 'No'] },
                 { id: 'A1.3', text: '¿Qué conceptos mencionó espontáneamente?', type: 'Checkboxes', options: ['Expertos/Gurús', 'Clientes', 'Consultas', 'Agenda', 'Pagos', 'Videollamada', 'Marketplace', 'Servicios', 'No entendió'] },
                 { id: 'A1.4', text: 'Del 1 al 5, ¿qué tan claro fue el mensaje principal?', type: 'Linear Scale (1-5)', options: ['1 (Nada claro)', '5 (Muy claro)'] },
                 { id: 'A1.5', text: '¿Qué frase o elemento del Home le ayudó más a entender?', type: 'Paragraph', options: [] }
