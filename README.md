@@ -20,9 +20,11 @@ Mientras QA esté ejecutando pruebas, mantener estable:
 
 ## Botón de ayuda visual en preguntas
 El formulario soporta una referencia visual por pregunta (imagen o video) usando:
+- `reference` (wrapper compatible; `enabled: false` oculta la referencia aunque existan campos legacy)
 - `mediaUrl`
 - `mediaType` (`image` o `video`)
 - `mediaHint`
+- `mediaUrls` / `mediaItems`
 
 Ejemplo:
 ```js
@@ -101,6 +103,10 @@ Requisitos:
 2. Confirmar que `index.html` no rompe el flujo público.
 3. Ejecutar smoke test de `QA_LIVE_RUNBOOK.md`.
 4. Recién después mergear a `main`.
+
+## Verificación rápida de contrato frontend
+- Ejecutar `node .\scripts\verify-frontend-contracts.mjs` para validar el contrato puro de referencia visual y parsing de respuestas.
+- Esto no toca producción ni requiere dependencias extra.
 
 ## Nota de estabilidad para QA
 Si necesitas experimentar sin tocar producción inmediata, trabajar en `guruxy_testing_hub_working.html` y promover cambios a `index.html` solo cuando estén verificados.

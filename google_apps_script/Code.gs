@@ -2,9 +2,19 @@ const SHEET_NAME = 'submissions';
 const MAX_ITEMS = 500;
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'application/pdf'];
+const EVIDENCE_FOLDER_ID = '1x8DvSuctREBBnSq9I_GTONRB2Xx8uzvS';
+const READ_ADMIN_TOKEN_PROPERTY = 'GX_READ_ADMIN_TOKEN';
+const INVALID_READ_ADMIN_TOKENS = [
+  'CHANGE_ME_READ_ADMIN_TOKEN',
+  'PASTE_READ_ADMIN_TOKEN_HERE'
+];
 
-function doGet() {
+function doGet(e) {
   try {
+    if (!isAuthorizedReadRequest_(e)) {
+      return jsonResponse({ ok: false, error: 'unauthorized' });
+    }
+
     const items = readSubmissions();
     return jsonResponse({ ok: true, items: items });
   } catch (err) {
@@ -39,26 +49,46 @@ function doPost(e) {
 
 function processUploadedFiles(payload) {
   if (!payload || !payload.answers) return;
-  
+
   for (const key in payload.answers) {
     const val = payload.answers[key];
     if (Array.isArray(val) && val.length > 0 && val.every(isUploadDescriptor)) {
-      try {
-        payload.answers[key] = val.map(uploadFileToDrive);
-      } catch (err) {
-        payload.answers[key] = "Error uploading files: " + String(err);
-      }
+      payload.answers[key] = val.map(uploadFileToDrive);
       continue;
     }
 
     if (isUploadDescriptor(val)) {
-      try {
-        payload.answers[key] = uploadFileToDrive(val);
-      } catch (err) {
-        payload.answers[key] = "Error uploading file: " + String(err);
-      }
+      payload.answers[key] = uploadFileToDrive(val);
     }
   }
+}
+
+function isAuthorizedReadRequest_(e) {
+  const expectedToken = getReadAdminToken_();
+  const providedToken = getRequestToken_(e);
+  return !!expectedToken && providedToken === expectedToken;
+}
+
+function getRequestToken_(e) {
+  if (!e || !e.parameter) return '';
+  return String(e.parameter.token || e.parameter.adminToken || '').trim();
+}
+
+function getReadAdminToken_() {
+  const properties = PropertiesService.getScriptProperties();
+  const configuredToken = properties.getProperty(READ_ADMIN_TOKEN_PROPERTY);
+  const token = configuredToken ? String(configuredToken).trim() : '';
+
+  if (isInvalidReadAdminToken_(token)) {
+    return '';
+  }
+
+  return token;
+}
+
+function isInvalidReadAdminToken_(token) {
+  const normalized = String(token || '').trim();
+  return !normalized || INVALID_READ_ADMIN_TOKENS.indexOf(normalized) !== -1;
 }
 
 function isUploadDescriptor(val) {
@@ -86,7 +116,7 @@ function uploadFileToDrive(fileDescriptor) {
   const safeFileName = String(fileDescriptor.filename || 'upload.bin').replace(/[\r\n]/g, ' ').slice(0, 120);
   const blob = Utilities.newBlob(decoded, mimeType, safeFileName);
 
-  const file = DriveApp.createFile(blob);
+  const file = DriveApp.getFolderById(EVIDENCE_FOLDER_ID).createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return file.getUrl();
 }

@@ -9,8 +9,9 @@
     <script>
         window.GX_QA_CONFIG = {
             remoteProvider: 'google-apps-script',
-            submitEndpoint: 'https://script.google.com/macros/s/AKfycbxNDECudyg8eH56V6qA0BQStHRY_HYDihw6HNuzhcefjBsLFwg85hQFHEXN3Jn_XDQ/exec',
-            fetchEndpoint: 'https://script.google.com/macros/s/AKfycbxNDECudyg8eH56V6qA0BQStHRY_HYDihw6HNuzhcefjBsLFwg85hQFHEXN3Jn_XDQ/exec',
+            submitEndpoint: 'https://script.google.com/macros/s/AKfycbxPlolrlA8lM29Zx3TQr6h7Tm5WHksUHvVVg4rTjFbaVxia9bDoeOG4A8mr6xclJmAB/exec',
+            fetchEndpoint: 'https://script.google.com/macros/s/AKfycbxPlolrlA8lM29Zx3TQr6h7Tm5WHksUHvVVg4rTjFbaVxia9bDoeOG4A8mr6xclJmAB/exec',
+            readAdminToken: '',
             publicHubUrl: 'https://haroldsthid.github.io/guruxy-testing-hub/',
             fetchIntervalMs: 30000
         };
@@ -541,7 +542,8 @@
             fetchEndpoint: '',
             publicHubUrl: '',
             fetchIntervalMs: 60000,
-            remoteApiKey: ''
+            remoteApiKey: '',
+            readAdminToken: ''
         };
 
         if (typeof window.GX_QA_CONFIG === 'object' && window.GX_QA_CONFIG) {
@@ -726,11 +728,40 @@
             return clean.slice(0, maxLen);
         }
 
+        function isPlaceholderReadAdminToken(token) {
+            const normalized = String(token || '').trim();
+            return !normalized || normalized === 'CHANGE_ME_READ_ADMIN_TOKEN' || normalized === 'PASTE_READ_ADMIN_TOKEN_HERE';
+        }
+
+        function getReadAdminTokenFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const mode = String(params.get('mode') || '').toLowerCase();
+                const hasTokenParam = params.has('readToken') || params.has('adminToken') || params.has('token');
+                if (mode !== 'admin' && !hasTokenParam) return '';
+
+                const token = String(params.get('readToken') || params.get('adminToken') || params.get('token') || '').trim();
+                return isPlaceholderReadAdminToken(token) ? '' : token;
+            } catch (_err) {
+                return '';
+            }
+        }
+
+        function getActiveReadAdminToken() {
+            const urlToken = getReadAdminTokenFromUrl();
+            if (urlToken) return urlToken;
+            const configuredToken = String(APP_CONFIG.readAdminToken || '').trim();
+            return isPlaceholderReadAdminToken(configuredToken) ? '' : configuredToken;
+        }
+
         function getShareUrlForCurrentForm() {
             const url = new URL(window.location.href);
             url.searchParams.set('tab', 'forms');
             url.searchParams.set('form', state.selectedForm);
             url.searchParams.set('mode', 'public');
+            url.searchParams.delete('token');
+            url.searchParams.delete('adminToken');
+            url.searchParams.delete('readToken');
             return url.toString();
         }
 
@@ -900,15 +931,27 @@
         }
 
         function normalizeMediaItems(urlOrEncodedItems, type, hint) {
+            const normalizeItem = (item, fallbackType = 'image', fallbackHint = 'Referencia visual') => {
+                if (!item) return null;
+                if (typeof item === 'string') {
+                    const url = item.trim();
+                    return url ? { url, type: fallbackType, hint: fallbackHint } : null;
+                }
+                if (typeof item === 'object' && item.url) {
+                    return {
+                        url: item.url,
+                        type: item.type || fallbackType,
+                        hint: item.hint || fallbackHint
+                    };
+                }
+                return null;
+            };
+
             if (typeof urlOrEncodedItems === 'string' && typeof type === 'undefined' && typeof hint === 'undefined') {
                 try {
                     const parsed = JSON.parse(decodeURIComponent(urlOrEncodedItems));
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed.filter(item => item && item.url).map(item => ({
-                            url: item.url,
-                            type: item.type || 'image',
-                            hint: item.hint || 'Referencia visual'
-                        }));
+                        return parsed.map(item => normalizeItem(item)).filter(Boolean);
                     }
                 } catch (_err) {
                     // Fallback to single URL flow.
@@ -916,22 +959,52 @@
             }
 
             if (Array.isArray(urlOrEncodedItems)) {
-                return urlOrEncodedItems.filter(item => item && item.url).map(item => ({
-                    url: item.url,
-                    type: item.type || 'image',
-                    hint: item.hint || 'Referencia visual'
-                }));
+                return urlOrEncodedItems.map(item => normalizeItem(item)).filter(Boolean);
             }
 
             if (typeof urlOrEncodedItems === 'string' && urlOrEncodedItems.trim()) {
-                return [{
-                    url: urlOrEncodedItems,
-                    type: type || 'image',
-                    hint: hint || 'Referencia visual'
-                }];
+                const item = normalizeItem(urlOrEncodedItems, type || 'image', hint || 'Referencia visual');
+                return item ? [item] : [];
             }
 
             return [];
+        }
+
+        function resolveQuestionReferenceMedia(question) {
+            const legacyItems = Array.isArray(question.mediaItems)
+                ? normalizeMediaItems(question.mediaItems)
+                : Array.isArray(question.mediaUrls)
+                    ? question.mediaUrls.map((url, idx) => ({
+                        url,
+                        type: question.mediaType || 'image',
+                        hint: Array.isArray(question.mediaHints) && question.mediaHints[idx]
+                            ? question.mediaHints[idx]
+                            : (question.mediaHint || 'Referencia visual')
+                    }))
+                    : question.mediaUrl
+                        ? [{ url: question.mediaUrl, type: question.mediaType || 'image', hint: question.mediaHint || 'Referencia visual' }]
+                        : [];
+
+            const reference = question && typeof question === 'object' ? question.reference : null;
+            if (!reference || typeof reference !== 'object' || Array.isArray(reference)) {
+                return { enabled: legacyItems.length > 0, label: '', items: legacyItems };
+            }
+
+            if (reference.enabled === false) {
+                return { enabled: false, label: '', items: [] };
+            }
+
+            const referenceItems = Array.isArray(reference.items)
+                ? normalizeMediaItems(reference.items)
+                : typeof reference.items === 'string' && reference.items.trim()
+                    ? normalizeMediaItems(reference.items)
+                    : [];
+
+            return {
+                enabled: true,
+                label: typeof reference.label === 'string' && reference.label.trim() ? reference.label.trim() : '',
+                items: referenceItems.length ? referenceItems : legacyItems
+            };
         }
 
         function renderActiveMediaItem() {
@@ -1063,26 +1136,16 @@
                                 <div class="p-4 space-y-4">
                                     ${section.questions.map((q, qIdx) => {
                                         const key = `q_${q.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-                                        const mediaItems = Array.isArray(q.mediaItems)
-                                            ? q.mediaItems
-                                            : Array.isArray(q.mediaUrls)
-                                                ? q.mediaUrls.map((url, idx) => ({
-                                                    url,
-                                                    type: q.mediaType || 'image',
-                                                    hint: Array.isArray(q.mediaHints) && q.mediaHints[idx]
-                                                        ? q.mediaHints[idx]
-                                                        : (q.mediaHint || 'Referencia visual')
-                                                }))
-                                                : q.mediaUrl
-                                                    ? [{ url: q.mediaUrl, type: q.mediaType || 'image', hint: q.mediaHint || 'Referencia visual' }]
-                                                    : [];
+                                        const mediaReference = resolveQuestionReferenceMedia(q);
+                                        const mediaItems = mediaReference.items;
+                                        const refLabel = mediaReference.label || (mediaItems.length > 1 ? `Ver referencias (${mediaItems.length})` : 'Ver referencia');
 
                                         const mediaPayload = mediaItems.length
                                             ? encodeURIComponent(JSON.stringify(mediaItems)).replace(/'/g, '%27')
                                             : '';
 
-                                        const refBtn = mediaItems.length ? `
-                                            <button type="button" class="gx-ref-btn" onclick="openMediaModal('${mediaPayload}')">&#128247; ${mediaItems.length > 1 ? `Ver referencias (${mediaItems.length})` : 'Ver referencia'}</button>
+                                        const refBtn = mediaReference.enabled && mediaItems.length ? `
+                                            <button type="button" class="gx-ref-btn" onclick="openMediaModal('${mediaPayload}')">&#128247; ${refLabel}</button>
                                         ` : '';
                                         return `
                                             <div class="space-y-1.5">
@@ -1209,12 +1272,28 @@
 
         async function sendSubmissionToEndpoint(submission) {
             if (!APP_CONFIG.submitEndpoint) return;
+            const parseResponseJson = async (resp) => {
+                const text = await resp.text();
+                if (!text) return null;
+                const trimmed = text.trim();
+                if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null;
+                try {
+                    return JSON.parse(trimmed);
+                } catch (_err) {
+                    return null;
+                }
+            };
+
             if (APP_CONFIG.remoteProvider === 'google-apps-script') {
                 const resp = await fetch(APP_CONFIG.submitEndpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(submission)
                 });
+                const payload = await parseResponseJson(resp);
+                if (payload && payload.ok === false) {
+                    throw new Error(payload.error || payload.message || 'submit_failed');
+                }
                 if (!resp.ok) {
                     throw new Error('submit_failed');
                 }
@@ -1243,12 +1322,19 @@
             return [];
         }
 
+        function buildGoogleAppsScriptReadEndpoint(endpoint, readAdminToken) {
+            if (!endpoint) return '';
+            if (!readAdminToken) return endpoint;
+            const separator = endpoint.includes('?') ? '&' : '?';
+            return `${endpoint}${separator}token=${encodeURIComponent(readAdminToken)}`;
+        }
+
         async function fetchRemoteSubmissions() {
             if (!APP_CONFIG.fetchEndpoint || state.uiMode === 'public') return;
             try {
                 let resp;
                 if (APP_CONFIG.remoteProvider === 'google-apps-script') {
-                    resp = await fetch(APP_CONFIG.fetchEndpoint);
+                    resp = await fetch(buildGoogleAppsScriptReadEndpoint(APP_CONFIG.fetchEndpoint, getActiveReadAdminToken()));
                 } else {
                     const headers = {};
                     if (APP_CONFIG.remoteApiKey) {

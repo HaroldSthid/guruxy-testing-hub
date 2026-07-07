@@ -31,6 +31,7 @@ In your HTML file, set GX_QA_CONFIG before the main script runs:
     remoteProvider: 'google-apps-script',
     submitEndpoint: 'PASTE_YOUR_WEB_APP_URL_HERE',
     fetchEndpoint: 'PASTE_YOUR_WEB_APP_URL_HERE',
+    readAdminToken: '', // keep empty in the committed bundle
     fetchIntervalMs: 30000
   };
 </script>
@@ -41,7 +42,7 @@ Recommended placement: inside <head>, after Tailwind and before the main script 
 - Shared tester URL uses mode=public and a specific form (A/B/C).
 - Tester submits responses on the web.
 - Submission is sent to Google Apps Script.
-- Admin hub polls GET endpoint and ingests new records.
+- Admin hub polls GET endpoint with the read/admin token and ingests new records.
 - SUS and Bugs panels are updated from ingested submissions.
 
 ## 5) Test checklist
@@ -58,16 +59,25 @@ Recommended placement: inside <head>, after Tailwind and before the main script 
 - Data is stored in the sheet tab named submissions.
 - Duplicate protection is based on submission id.
 - If you redeploy Apps Script, update endpoint URL in GX_QA_CONFIG.
+- GET/readback is protected by the Apps Script script property `GX_READ_ADMIN_TOKEN`.
+- Open the admin hub with `?mode=admin&readToken=...` or `?adminToken=...`; keep the committed HTML token field empty.
+- The placeholders `CHANGE_ME_READ_ADMIN_TOKEN` and `PASTE_READ_ADMIN_TOKEN_HERE` are never accepted; if the script property is missing, blank, or still placeholder, GET returns unauthorized.
+- POST remains public so testers can submit forms without the token.
 
 ## 7) Current hardening (P0)
 - Duplicate prevention: server checks `id` before `appendRow` and returns `{ duplicate: true }` when repeated.
-- Upload size cap: `MAX_UPLOAD_BYTES = 1 MB`.
+- Uploads are saved to the Drive evidence folder configured by `EVIDENCE_FOLDER_ID` in `Code.gs`.
+- Upload size cap: `MAX_UPLOAD_BYTES = 10 MB`.
 - Allowed upload MIME types:
   - `image/jpeg`
   - `image/png`
   - `image/webp`
+  - `video/mp4`
+  - `video/webm`
   - `application/pdf`
 - Upload filename guard: CR/LF removed and filename truncated before write.
+- Evidence URLs are stored in `answersJson` and become visible when reading submissions back through GET or spreadsheet review.
+- Never commit a real read/admin token into this repository; keep `GX_QA_CONFIG.readAdminToken` empty and pass the token at admin-open time via URL.
 
 ## 8) Live QA smoke test (recommended for each release)
 1. Open admin hub in a normal browser window.
@@ -76,7 +86,7 @@ Recommended placement: inside <head>, after Tailwind and before the main script 
 4. Confirm new data appears in admin after polling interval.
 5. Re-submit same payload id (or retry network) and verify no duplicate row is created.
 6. Submit a payload with HTML-like text (`<b>test</b>`) and verify rendered output is safe/plain text.
-7. Try an invalid file type or size > 1 MB and verify controlled error behavior.
+7. Try an invalid file type or size > 10 MB and verify controlled error behavior.
 
 ## 9) Operational guidance during active QA window
 - Monitor cadence: review incoming bugs and SUS every 30-60 minutes.
