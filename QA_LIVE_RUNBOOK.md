@@ -29,6 +29,7 @@ This runbook is for the active QA delivery window on GitHub Pages.
 1. Run `node .\scripts\verify-frontend-contracts.mjs`.
 2. Confirm reference toggles hide legacy media when `reference.enabled=false`.
 3. Confirm Google Apps Script submit parsing treats application-level `{ ok: false }` as failure.
+4. Confirm the versioned form catalog is loaded from `forms/catalog.js` and submissions carry snapshot metadata in `answers.__meta`.
 
 ## Incident triage
 - P0: Blocking issue preventing task completion. Escalate immediately and assign owner.

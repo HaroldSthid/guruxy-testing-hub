@@ -108,5 +108,10 @@ Requisitos:
 - Ejecutar `node .\scripts\verify-frontend-contracts.mjs` para validar el contrato puro de referencia visual y parsing de respuestas.
 - Esto no toca producción ni requiere dependencias extra.
 
+## Catálogo versionado de formularios
+- Las definiciones de Forms A/B/C viven en `forms/catalog.js` como catálogo versionado.
+- Cada envío guarda `formVersion` y `formSnapshot` dentro de `answers.__meta` para trazabilidad sin tocar columnas de Spreadsheet.
+- Si el catálogo no carga, el hub cae en modo seguro sin romper submissions antiguas.
+
 ## Nota de estabilidad para QA
 Si necesitas experimentar sin tocar producción inmediata, trabajar en `guruxy_testing_hub_working.html` y promover cambios a `index.html` solo cuando estén verificados.

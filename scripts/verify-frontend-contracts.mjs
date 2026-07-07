@@ -102,6 +102,77 @@ function buildGoogleAppsScriptReadEndpoint(endpoint, readAdminToken) {
   return `${endpoint}${separator}token=${encodeURIComponent(readAdminToken)}`;
 }
 
+function resolveActiveFormVersion(formKey, catalog) {
+  const entry = catalog && catalog.forms ? catalog.forms[formKey] : null;
+  if (!entry || typeof entry !== 'object') return null;
+  const versions = entry.versions && typeof entry.versions === 'object' ? entry.versions : null;
+  if (!versions) return null;
+  const versionId = typeof entry.activeVersion === 'string' ? entry.activeVersion : '';
+  const version = versionId && versions[versionId] ? versions[versionId] : Object.values(versions)[0];
+  if (!version || typeof version !== 'object') return null;
+  const form = version.form || null;
+  return {
+    formKey,
+    activeVersion: versionId || version.id || '',
+    version: {
+      id: version.id || '',
+      label: version.label || '',
+      status: version.status || ''
+    },
+    form: form ? {
+      ...form,
+      formKey,
+      activeVersion: versionId || version.id || '',
+      version: {
+        id: version.id || '',
+        label: version.label || '',
+        status: version.status || ''
+      }
+    } : null
+  };
+}
+
+function isAnsweredValue(value) {
+  if (value === null || value === undefined) return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (typeof value === 'object') return Object.keys(value).length > 0;
+  return true;
+}
+
+function buildFormSnapshot(formData, answers) {
+  const snapshot = {
+    formKey: formData.formKey || '',
+    formId: formData.id || '',
+    formVersion: formData.activeVersion || formData.version?.id || '',
+    versionLabel: formData.version?.label || '',
+    versionStatus: formData.version?.status || '',
+    title: formData.title || '',
+    duration: formData.duration || '',
+    target: formData.target || '',
+    sections: []
+  };
+
+  (Array.isArray(formData.sections) ? formData.sections : []).forEach(section => {
+    const sectionSnapshot = { title: section.title || '', instruction: section.instruction || '', questions: [] };
+    (Array.isArray(section.questions) ? section.questions : []).forEach(question => {
+      const key = `q_${String(question.id || '').replace(/[^a-zA-Z0-9_]/g, '_')}`;
+      if (!isAnsweredValue(answers[key])) return;
+      const reference = resolveQuestionReferenceMedia(question);
+      sectionSnapshot.questions.push({
+        id: question.id || '',
+        text: question.text || '',
+        type: question.type || '',
+        options: Array.isArray(question.options) ? [...question.options] : [],
+        reference
+      });
+    });
+    if (sectionSnapshot.questions.length) snapshot.sections.push(sectionSnapshot);
+  });
+
+  return snapshot;
+}
+
 function isPlaceholderReadAdminToken(token) {
   const normalized = String(token || '').trim();
   return !normalized || normalized === 'CHANGE_ME_READ_ADMIN_TOKEN' || normalized === 'PASTE_READ_ADMIN_TOKEN_HERE';
@@ -144,6 +215,52 @@ assert.deepEqual(
   }),
   { enabled: false, label: '', items: [] }
 );
+
+const versionedCatalog = {
+  forms: {
+    A: {
+      activeVersion: 'v1',
+      versions: {
+        v1: {
+          id: 'v1',
+          label: 'Initial extracted version',
+          status: 'active',
+          form: {
+            id: 'form-a',
+            title: 'Formulario A - Home Guruxy',
+            duration: '12 a 18 minutos',
+            target: 'Cualquier tester (incluso sin conocimiento previo)',
+            sections: [{
+              title: 'Sección A1 - Primera Impresión',
+              questions: [
+                { id: 'A1.1', text: 'Mira el Home durante 10 segundos. ¿Qué crees que hace Guruxy?', type: 'Paragraph', options: [], mediaUrl: 'https://example.test/legacy.jpg', mediaHint: 'Home reference' },
+                { id: 'A4.5', text: 'Sube evidencia si aplica: screenshot o video', type: 'File Upload', options: [] }
+              ]
+            }]
+          }
+        }
+      }
+    }
+  }
+};
+
+assert.equal(resolveActiveFormVersion('A', versionedCatalog).version.id, 'v1');
+
+const snapshot = buildFormSnapshot(resolveActiveFormVersion('A', versionedCatalog).form, {
+  q_A1_1: 'Observed',
+  q_A4_5: [{ filename: 'evidence.png', mimeType: 'image/png', base64: 'data:image/png;base64,AAAA' }]
+});
+
+assert.equal(snapshot.formVersion, 'v1');
+assert.equal(snapshot.sections[0].questions.length, 2);
+assert.equal(snapshot.sections[0].questions[0].type, 'Paragraph');
+assert.equal(snapshot.sections[0].questions[0].reference.items.length, 1);
+assert.equal(snapshot.sections[0].questions[1].type, 'File Upload');
+
+const legacyAnswers = JSON.parse('{"q_A0_1":"Tester","q_A4_5":[{"filename":"evidence.png","mimeType":"image/png","base64":"data:image/png;base64,AAAA"}]}');
+assert.equal(isAnsweredValue(legacyAnswers.q_A0_1), true);
+assert.equal(isAnsweredValue(legacyAnswers.q_A4_5), true);
+assert.equal(legacyAnswers.q_missing, undefined);
 
 assert.deepEqual(
   resolveQuestionReferenceMedia({
