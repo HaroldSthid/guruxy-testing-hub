@@ -229,21 +229,55 @@ function isPlaceholderReadAdminToken(token) {
   return !normalized || normalized === 'CHANGE_ME_READ_ADMIN_TOKEN' || normalized === 'PASTE_READ_ADMIN_TOKEN_HERE';
 }
 
-function resolveReadAdminToken(search, configuredToken = '') {
+function getReadAdminTokenSessionKey() {
+  return 'guruxy-testing-hub-read-admin-token-v1';
+}
+
+function getReadAdminTokenFromSession(sessionStorageLike) {
+  try {
+    const token = String(sessionStorageLike?.getItem?.(getReadAdminTokenSessionKey()) || '').trim();
+    return isPlaceholderReadAdminToken(token) ? '' : token;
+  } catch (_err) {
+    return '';
+  }
+}
+
+function persistReadAdminTokenInSession(sessionStorageLike, token) {
+  try {
+    const normalized = String(token || '').trim();
+    if (!sessionStorageLike?.setItem || !sessionStorageLike?.removeItem) return;
+    if (isPlaceholderReadAdminToken(normalized)) {
+      sessionStorageLike.removeItem(getReadAdminTokenSessionKey());
+    } else {
+      sessionStorageLike.setItem(getReadAdminTokenSessionKey(), normalized);
+    }
+  } catch (_err) {
+    // Best effort only.
+  }
+}
+
+function resolveActiveReadAdminToken(search, configuredToken = '', sessionStorageLike = null) {
   const params = new URLSearchParams(String(search || '').startsWith('?') ? String(search || '') : `?${String(search || '')}`);
   const mode = String(params.get('mode') || '').toLowerCase();
   const hasTokenParam = params.has('readToken') || params.has('adminToken') || params.has('token');
-  const urlToken = hasTokenParam && (mode === 'admin' || hasTokenParam)
-    ? String(params.get('readToken') || params.get('adminToken') || params.get('token') || '').trim()
-    : '';
+  const urlToken = hasTokenParam ? String(params.get('readToken') || params.get('adminToken') || params.get('token') || '').trim() : '';
 
-  if (!isPlaceholderReadAdminToken(urlToken)) return urlToken;
+  if (!isPlaceholderReadAdminToken(urlToken)) {
+    persistReadAdminTokenInSession(sessionStorageLike, urlToken);
+    return { token: urlToken, source: 'url' };
+  }
+
+  const sessionToken = getReadAdminTokenFromSession(sessionStorageLike);
+  if (!isPlaceholderReadAdminToken(sessionToken)) {
+    return { token: sessionToken, source: 'session' };
+  }
 
   const configured = String(configuredToken || '').trim();
-  if (!isPlaceholderReadAdminToken(configured)) return configured;
+  if (!isPlaceholderReadAdminToken(configured)) {
+    return { token: configured, source: 'config' };
+  }
 
-  if (mode !== 'admin' && !hasTokenParam) return '';
-  return '';
+  return { token: '', source: 'none' };
 }
 
 function buildShareUrlForCurrentForm(currentUrl, selectedForm) {
@@ -472,24 +506,52 @@ assert.equal(
   'https://script.google.com/macros/s/example/exec'
 );
 
-assert.equal(
-  resolveReadAdminToken('?mode=admin&readToken=READ TOKEN', ''),
-  'READ TOKEN'
+function createSessionStorageMock(seed = {}) {
+  const store = new Map(Object.entries(seed));
+  return {
+    getItem(key) {
+      return store.has(key) ? store.get(key) : null;
+    },
+    setItem(key, value) {
+      store.set(key, String(value));
+    },
+    removeItem(key) {
+      store.delete(key);
+    }
+  };
+}
+
+const sessionStore = createSessionStorageMock();
+assert.deepEqual(
+  resolveActiveReadAdminToken('?mode=admin&readToken=READ TOKEN', '', sessionStore),
+  { token: 'READ TOKEN', source: 'url' }
+);
+assert.equal(sessionStore.getItem(getReadAdminTokenSessionKey()), 'READ TOKEN');
+
+const sessionOnlyStore = createSessionStorageMock({ [getReadAdminTokenSessionKey()]: 'SESSION TOKEN' });
+assert.deepEqual(
+  resolveActiveReadAdminToken('?mode=admin', '', sessionOnlyStore),
+  { token: 'SESSION TOKEN', source: 'session' }
 );
 
-assert.equal(
-  resolveReadAdminToken('?adminToken=READ TOKEN', ''),
-  'READ TOKEN'
+assert.deepEqual(
+  resolveActiveReadAdminToken('?adminToken=READ TOKEN', '', createSessionStorageMock()),
+  { token: 'READ TOKEN', source: 'url' }
 );
 
-assert.equal(
-  resolveReadAdminToken('?mode=admin&readToken=PASTE_READ_ADMIN_TOKEN_HERE', ''),
-  ''
+assert.deepEqual(
+  resolveActiveReadAdminToken('?mode=admin&readToken=PASTE_READ_ADMIN_TOKEN_HERE', '', createSessionStorageMock({ [getReadAdminTokenSessionKey()]: 'SESSION TOKEN' })),
+  { token: 'SESSION TOKEN', source: 'session' }
 );
 
-assert.equal(
-  resolveReadAdminToken('?mode=public', 'CONFIG TOKEN'),
-  'CONFIG TOKEN'
+assert.deepEqual(
+  resolveActiveReadAdminToken('?mode=public', 'CONFIG TOKEN', createSessionStorageMock()),
+  { token: 'CONFIG TOKEN', source: 'config' }
+);
+
+assert.deepEqual(
+  resolveActiveReadAdminToken('?mode=admin', '', createSessionStorageMock()),
+  { token: '', source: 'none' }
 );
 
 assert.deepEqual(

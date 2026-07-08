@@ -180,6 +180,9 @@
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     Modo de Prueba Beta Listo
                 </div>
+                <button type="button" data-admin-logout class="qa-admin-only hidden rounded-lg border border-indigo-700/50 bg-indigo-900/40 px-3 py-1.5 text-xs font-semibold text-indigo-100 shadow-sm hover:bg-indigo-800/60 transition-colors">
+                    Cerrar sesión admin
+                </button>
             </div>
         </header>
 
@@ -237,6 +240,25 @@
             <!-- TAB CONTENT -->
             <div id="tab-content" class="animate-fadeIn">
                 <!-- Cada tab se renderiza dinámicamente -->
+            </div>
+
+            <div id="admin-access-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 px-4">
+                <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                    <div class="mb-5">
+                        <p class="text-xs font-black uppercase tracking-[0.25em] text-indigo-600">Admin access</p>
+                        <h2 class="mt-2 text-2xl font-black text-slate-900">Unlock readback</h2>
+                        <p class="mt-2 text-sm text-slate-600">Paste the admin read token to enable GET polling in this browser session.</p>
+                    </div>
+                    <form id="admin-access-form" class="space-y-4">
+                        <label for="admin-token-input" class="block text-xs font-black uppercase tracking-wider text-slate-500">Admin token</label>
+                        <input id="admin-token-input" type="password" autocomplete="off" spellcheck="false" inputmode="text" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Paste GX_READ_ADMIN_TOKEN">
+                        <div class="flex items-center gap-3">
+                            <button type="submit" class="rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-700 transition-colors">Access admin</button>
+                            <span class="text-xs text-slate-500">Stored in sessionStorage only.</span>
+                        </div>
+                    </form>
+                    <p class="mt-4 text-[11px] leading-relaxed text-slate-400">Keep the token out of public tester URLs and rotate it if exposed.</p>
+                </div>
             </div>
         </div>
 
@@ -787,6 +809,10 @@
             return !normalized || normalized === 'CHANGE_ME_READ_ADMIN_TOKEN' || normalized === 'PASTE_READ_ADMIN_TOKEN_HERE';
         }
 
+        function getReadAdminTokenSessionKey() {
+            return 'guruxy-testing-hub-read-admin-token-v1';
+        }
+
         function getReadAdminTokenFromUrl() {
             try {
                 const params = new URLSearchParams(window.location.search);
@@ -803,9 +829,80 @@
 
         function getActiveReadAdminToken() {
             const urlToken = getReadAdminTokenFromUrl();
-            if (urlToken) return urlToken;
+            if (urlToken) {
+                persistReadAdminTokenInSession(urlToken);
+                stripReadAdminTokenFromUrl();
+                return urlToken;
+            }
+
+            const sessionToken = getReadAdminTokenFromSession();
+            if (sessionToken) return sessionToken;
+
             const configuredToken = String(APP_CONFIG.readAdminToken || '').trim();
             return isPlaceholderReadAdminToken(configuredToken) ? '' : configuredToken;
+        }
+
+        function getReadAdminTokenFromSession() {
+            try {
+                const token = String(sessionStorage.getItem(getReadAdminTokenSessionKey()) || '').trim();
+                return isPlaceholderReadAdminToken(token) ? '' : token;
+            } catch (_err) {
+                return '';
+            }
+        }
+
+        function persistReadAdminTokenInSession(token) {
+            try {
+                const normalized = String(token || '').trim();
+                if (isPlaceholderReadAdminToken(normalized)) {
+                    sessionStorage.removeItem(getReadAdminTokenSessionKey());
+                } else {
+                    sessionStorage.setItem(getReadAdminTokenSessionKey(), normalized);
+                }
+            } catch (_err) {
+                // Session storage is best-effort.
+            }
+        }
+
+        function clearReadAdminTokenSession() {
+            try {
+                sessionStorage.removeItem(getReadAdminTokenSessionKey());
+            } catch (_err) {
+                // Ignore storage failures.
+            }
+        }
+
+        function stripReadAdminTokenFromUrl() {
+            try {
+                const url = new URL(window.location.href);
+                let changed = false;
+                ['token', 'adminToken', 'readToken'].forEach(param => {
+                    if (url.searchParams.has(param)) {
+                        url.searchParams.delete(param);
+                        changed = true;
+                    }
+                });
+                if (changed) {
+                    window.history.replaceState({}, document.title, url.toString());
+                }
+            } catch (_err) {
+                // If the URL cannot be rewritten, keep running with the active session token.
+            }
+        }
+
+        function syncAdminAccessState() {
+            const hasToken = !!getActiveReadAdminToken();
+            const adminMode = state.uiMode === 'full';
+            const overlay = document.getElementById('admin-access-overlay');
+            const logoutButton = document.querySelector('[data-admin-logout]');
+
+            if (overlay) {
+                overlay.classList.toggle('hidden', !(adminMode && !hasToken));
+            }
+
+            if (logoutButton) {
+                logoutButton.classList.toggle('hidden', !(adminMode && hasToken));
+            }
         }
 
         function getShareUrlForCurrentForm() {
@@ -1434,7 +1531,9 @@
             try {
                 let resp;
                 if (APP_CONFIG.remoteProvider === 'google-apps-script') {
-                    resp = await fetch(buildGoogleAppsScriptReadEndpoint(APP_CONFIG.fetchEndpoint, getActiveReadAdminToken()));
+                    const activeReadToken = getActiveReadAdminToken();
+                    if (!activeReadToken) return;
+                    resp = await fetch(buildGoogleAppsScriptReadEndpoint(APP_CONFIG.fetchEndpoint, activeReadToken));
                 } else {
                     const headers = {};
                     if (APP_CONFIG.remoteApiKey) {
@@ -1474,6 +1573,7 @@
 
             document.body.classList.toggle('public-mode', state.uiMode === 'public');
             document.body.classList.toggle('tester-mode', state.uiMode === 'tester');
+            syncAdminAccessState();
 
             // Update tab buttons active state
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1961,6 +2061,9 @@
                 return;
             }
 
+            document.getElementById('admin-access-form')?.addEventListener('submit', adminAccessSubmitHandler);
+            document.querySelector('[data-admin-logout]')?.addEventListener('click', adminLogoutHandler);
+
             // Tabs
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.removeEventListener('click', tabClickHandler);
@@ -2215,6 +2318,30 @@
             renderTabs();
         }
 
+        function adminAccessSubmitHandler(e) {
+            e.preventDefault();
+            const input = document.getElementById('admin-token-input');
+            const token = String(input ? input.value : '').trim();
+            if (isPlaceholderReadAdminToken(token)) {
+                showToast('Ingresa un token admin válido.');
+                return;
+            }
+
+            persistReadAdminTokenInSession(token);
+            stripReadAdminTokenFromUrl();
+            if (input) input.value = '';
+            renderTabs();
+            fetchRemoteSubmissions();
+            showToast('Admin readback habilitado en esta sesión.');
+        }
+
+        function adminLogoutHandler() {
+            clearReadAdminTokenSession();
+            stripReadAdminTokenFromUrl();
+            renderTabs();
+            showToast('Sesión admin cerrada.');
+        }
+
         function exportBugsHandler() {
             let md = `# Reporte de Bugs - QA Guruxy (dev.guruxy.com)\n\nGenerado el ${new Date().toLocaleDateString()}\n\n`;
             state.bugs.forEach((b, index) => {
@@ -2242,6 +2369,7 @@
         }
         renderTabs();
         fetchRemoteSubmissions();
+        syncAdminAccessState();
         if (APP_CONFIG.fetchEndpoint) {
             setInterval(fetchRemoteSubmissions, APP_CONFIG.fetchIntervalMs);
         }

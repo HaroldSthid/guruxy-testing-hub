@@ -109,6 +109,11 @@ Requisitos:
 - Ejecutar `node .\scripts\validate-forms-catalog.mjs` antes de editar preguntas/opciones en `forms/catalog.js`.
 - Esto no toca producción ni requiere dependencias extra.
 
+## Acceso admin liviano
+- Abrir `?mode=admin` y pegar el token de lectura cuando aparezca el acceso bloqueado.
+- El token queda sólo en `sessionStorage`; usar Logout para limpiarlo.
+- Si el token se expone, rotarlo en Apps Script y actualizar el secreto fuera del repo.
+
 ## Edición versionada de formularios
 - Las preguntas/opciones activas viven en `forms/catalog.js`.
 - Ver guía operativa: `forms/README.md`.

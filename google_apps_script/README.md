@@ -60,9 +60,10 @@ Recommended placement: inside <head>, after Tailwind and before the main script 
 - Duplicate protection is based on submission id.
 - If you redeploy Apps Script, update endpoint URL in GX_QA_CONFIG.
 - GET/readback is protected by the Apps Script script property `GX_READ_ADMIN_TOKEN`.
-- Open the admin hub with `?mode=admin&readToken=...` or `?adminToken=...`; keep the committed HTML token field empty.
+- Open the admin hub with `?mode=admin` and paste the token into the session-only admin access screen; Logout clears the browser session token.
 - The placeholders `CHANGE_ME_READ_ADMIN_TOKEN` and `PASTE_READ_ADMIN_TOKEN_HERE` are never accepted; if the script property is missing, blank, or still placeholder, GET returns unauthorized.
 - POST remains public so testers can submit forms without the token.
+- If the token is ever exposed, rotate `GX_READ_ADMIN_TOKEN` immediately and re-share the new value out of band.
 
 ## 7) Current hardening (P0)
 - Duplicate prevention: server checks `id` before `appendRow` and returns `{ duplicate: true }` when repeated.

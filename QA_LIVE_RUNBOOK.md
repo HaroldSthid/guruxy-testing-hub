@@ -48,7 +48,7 @@ This runbook is for the active QA delivery window on GitHub Pages.
 2. Re-run smoke test on GitHub Pages URL.
 3. Verify one end-to-end submission.
 4. If Apps Script redeployed, update endpoint URL in `GX_QA_CONFIG`.
-5. Set the Apps Script script property `GX_READ_ADMIN_TOKEN`, keep the committed HTML token field empty, and open admin with `?mode=admin&readToken=...` or `?adminToken=...`.
+5. Set the Apps Script script property `GX_READ_ADMIN_TOKEN`, keep the committed HTML token field empty, and open admin with `?mode=admin`, then paste the token into the session-only admin screen.
 6. POST stays public; do not add the token to submit requests.
 7. Publish change note to QA team.
 8. If adding new help images, publish them with `scripts/publish-asset.ps1`, verify the GitHub URL, and update `mediaUrl` with Raw URL (main).
