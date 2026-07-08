@@ -414,6 +414,8 @@
         const APP_CONFIG = {
             targetBetaTesters: 500,
             cohortSize: 25,
+            currentTestRun: 'internal-smoke',
+            currentCohort: 'internal-smoke-cohort',
             storageKey: 'guruxy-beta-qa-state-v1',
             autosaveMs: 250,
             remoteProvider: 'google-apps-script',
@@ -433,6 +435,7 @@
             return {
                 activeTab: 'strategy',
                 selectedForm: 'A',
+                selectedTestRunFilter: 'all',
                 uiMode: 'full',
                 lockedForm: null,
                 ingestedSubmissionIds: [],
@@ -494,6 +497,7 @@
                 const snapshot = {
                     activeTab: state.activeTab,
                     selectedForm: state.selectedForm,
+                    selectedTestRunFilter: state.selectedTestRunFilter,
                     uiMode: state.uiMode,
                     lockedForm: state.lockedForm,
                     ingestedSubmissionIds: state.ingestedSubmissionIds,
@@ -522,6 +526,7 @@
                 const defaults = buildInitialState();
                 state.activeTab = typeof parsed.activeTab === 'string' ? parsed.activeTab : defaults.activeTab;
                 state.selectedForm = typeof parsed.selectedForm === 'string' ? parsed.selectedForm : defaults.selectedForm;
+                state.selectedTestRunFilter = typeof parsed.selectedTestRunFilter === 'string' ? parsed.selectedTestRunFilter : defaults.selectedTestRunFilter;
                 state.uiMode = typeof parsed.uiMode === 'string' ? parsed.uiMode : defaults.uiMode;
                 state.lockedForm = typeof parsed.lockedForm === 'string' ? parsed.lockedForm : defaults.lockedForm;
                 state.ingestedSubmissionIds = Array.isArray(parsed.ingestedSubmissionIds) ? parsed.ingestedSubmissionIds : defaults.ingestedSubmissionIds;
@@ -614,6 +619,167 @@
                 .replace(/[\u0000-\u001F\u007F]/g, ' ')
                 .trim();
             return clean.slice(0, maxLen);
+        }
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function escapeAttr(value) {
+            return escapeHtml(value);
+        }
+
+        function normalizeSubmissionTag(value, fallback) {
+            const clean = sanitizeUserText(value || '', 120);
+            return clean || fallback;
+        }
+
+        function parseMaybeJson(value) {
+            if (!value) return null;
+            if (typeof value === 'object') return value;
+            if (typeof value !== 'string') return null;
+            const trimmed = value.trim();
+            if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null;
+            try {
+                return JSON.parse(trimmed);
+            } catch (_err) {
+                return null;
+            }
+        }
+
+        function getSubmissionAnswers(submission) {
+            const directAnswers = submission && submission.answers && typeof submission.answers === 'object' && !Array.isArray(submission.answers)
+                ? submission.answers
+                : null;
+            if (directAnswers) return directAnswers;
+            const parsedAnswersJson = parseMaybeJson(submission && submission.answersJson);
+            return parsedAnswersJson && typeof parsedAnswersJson === 'object' && !Array.isArray(parsedAnswersJson)
+                ? parsedAnswersJson
+                : {};
+        }
+
+        function getSubmissionMeta(submission) {
+            const meta = getSubmissionAnswers(submission).__meta;
+            return meta && typeof meta === 'object' && !Array.isArray(meta) ? meta : {};
+        }
+
+        function getSubmissionTestRun(submission) {
+            const meta = getSubmissionMeta(submission);
+            return normalizeSubmissionTag(meta.testRun || submission?.testRun || '', 'legacy');
+        }
+
+        function getSubmissionCohort(submission) {
+            const meta = getSubmissionMeta(submission);
+            return normalizeSubmissionTag(meta.cohort || submission?.cohort || '', 'unassigned');
+        }
+
+        function buildSubmissionMeta(formVersion, formSnapshot, submittedAt, testRun, cohort) {
+            return {
+                testRun: normalizeSubmissionTag(testRun, 'legacy'),
+                cohort: normalizeSubmissionTag(cohort, 'unassigned'),
+                submittedAt: submittedAt || new Date().toISOString(),
+                formVersion,
+                formSnapshot
+            };
+        }
+
+        function formatSubmissionDate(value) {
+            if (!value) return 'Fecha no disponible';
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? 'Fecha no disponible' : parsed.toLocaleString();
+        }
+
+        function getSubmissionRunOptions() {
+            const runs = new Set([APP_CONFIG.currentTestRun, 'legacy']);
+            state.publicResponses.forEach(submission => runs.add(getSubmissionTestRun(submission)));
+            return Array.from(runs).filter(Boolean).sort((a, b) => {
+                if (a === 'legacy') return 1;
+                if (b === 'legacy') return -1;
+                return a.localeCompare(b);
+            });
+        }
+
+        function getFilteredPublicResponses() {
+            if (!state.selectedTestRunFilter || state.selectedTestRunFilter === 'all') return state.publicResponses;
+            return state.publicResponses.filter(submission => getSubmissionTestRun(submission) === state.selectedTestRunFilter);
+        }
+
+        function renderTestRunSummary() {
+            const filteredResponses = getFilteredPublicResponses();
+            const runStats = new Map();
+
+            filteredResponses.forEach(submission => {
+                const run = getSubmissionTestRun(submission);
+                const cohort = getSubmissionCohort(submission);
+                const current = runStats.get(run) || { count: 0, latestAt: '', cohorts: new Set() };
+                current.count += 1;
+                current.cohorts.add(cohort);
+                if (!current.latestAt || new Date(submission.submittedAt || 0) > new Date(current.latestAt || 0)) {
+                    current.latestAt = submission.submittedAt || '';
+                }
+                runStats.set(run, current);
+            });
+
+            const summaryCards = Array.from(runStats.entries()).sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0])).map(([run, stats]) => `
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm font-extrabold text-slate-800">${escapeHtml(run)}</span>
+                        <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">${stats.count}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-1">Cohorts: ${escapeHtml(Array.from(stats.cohorts).join(', '))}</p>
+                    <p class="text-[11px] text-slate-400 mt-1">Último envío: ${escapeHtml(formatSubmissionDate(stats.latestAt))}</p>
+                </div>
+            `).join('');
+
+            const recent = [...filteredResponses]
+                .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0))
+                .slice(0, 5)
+                .map((submission, idx) => `
+                    <div class="flex flex-col gap-1 rounded-xl border border-slate-100 bg-white p-3 text-xs">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="font-bold text-slate-800">#${idx + 1} ${escapeHtml(sanitizeUserText(submission.testerName || 'Tester', 80))}</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">${escapeHtml(getSubmissionTestRun(submission))}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2 text-[11px] text-slate-500">
+                            <span>Cohort: ${escapeHtml(getSubmissionCohort(submission))}</span>
+                            <span>Form: ${escapeHtml(sanitizeUserText(submission.formVersion || submission.form || 'n/a', 40))}</span>
+                            <span>${escapeHtml(formatSubmissionDate(submission.submittedAt))}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+            return `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 animate-fadeIn qa-admin-only mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-4">
+                        <div>
+                            <h3 class="text-lg font-black text-slate-800">Test Run / Cohort tracker</h3>
+                            <p class="text-xs text-slate-500">Filtra los envíos por campaña y mantené legacy/unassigned visibles sin tocar datos existentes.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label for="test-run-filter" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Filtrar</label>
+                            <select id="test-run-filter" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="all" ${state.selectedTestRunFilter === 'all' ? 'selected' : ''}>Todos los test runs</option>
+                                ${getSubmissionRunOptions().map(run => `<option value="${escapeAttr(run)}" ${state.selectedTestRunFilter === run ? 'selected' : ''}>${escapeHtml(run)}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        ${summaryCards || '<div class="text-xs text-slate-400">Sin envíos registrados todavía.</div>'}
+                    </div>
+                    <div class="mt-5">
+                        <h4 class="text-xs font-black uppercase tracking-wider text-slate-400 mb-3">Últimos envíos</h4>
+                        <div class="space-y-2">
+                            ${recent || '<div class="text-xs text-slate-400">Sin envíos para este filtro.</div>'}
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         function isPlaceholderReadAdminToken(token) {
@@ -1083,6 +1249,7 @@
             const fd = new FormData(formElement);
             const answers = {};
             const currentForm = getFormData(state.selectedForm);
+            const submittedAt = new Date().toISOString();
 
             for (const [key, value] of fd.entries()) {
                 if (key.endsWith('[]')) {
@@ -1110,6 +1277,14 @@
 
             const formVersion = currentForm.activeVersion || currentForm.version?.id || '';
             const formSnapshot = buildFormSnapshot(currentForm, answers);
+            const existingMeta = answers.__meta && typeof answers.__meta === 'object' && !Array.isArray(answers.__meta) ? answers.__meta : {};
+            const meta = buildSubmissionMeta(
+                formVersion,
+                formSnapshot,
+                submittedAt,
+                APP_CONFIG.currentTestRun,
+                APP_CONFIG.currentCohort
+            );
 
             return {
                 id: 'sub-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
@@ -1118,15 +1293,17 @@
                 formSnapshot,
                 testerName: sanitizeUserText(answers.meta_tester_name || 'Tester', 120),
                 testerEmail: sanitizeUserText(answers.meta_tester_email || '', 180),
-                submittedAt: new Date().toISOString(),
+                submittedAt,
                 susScore: answers.meta_sus_score ? parseFloat(answers.meta_sus_score) : null,
                 bugSeverity: sanitizeUserText(answers.meta_bug_severity || '', 20),
                 bugActual: sanitizeUserText(answers.meta_bug_actual || '', 4000),
+                testRun: meta.testRun,
+                cohort: meta.cohort,
                 answers: {
                     ...answers,
                     __meta: {
-                        formVersion,
-                        formSnapshot
+                        ...existingMeta,
+                        ...meta
                     }
                 }
             };
@@ -1138,9 +1315,13 @@
 
             const safeSubmission = {
                 ...submission,
+                answers: getSubmissionAnswers(submission),
                 testerName: sanitizeUserText(submission.testerName || 'Tester', 120),
                 bugSeverity: sanitizeUserText(submission.bugSeverity || '', 20),
-                bugActual: sanitizeUserText(submission.bugActual || '', 4000)
+                bugActual: sanitizeUserText(submission.bugActual || '', 4000),
+                submittedAt: sanitizeUserText(submission.submittedAt || '', 64) || new Date().toISOString(),
+                testRun: getSubmissionTestRun(submission),
+                cohort: getSubmissionCohort(submission)
             };
 
             state.publicResponses.unshift(safeSubmission);
@@ -1496,6 +1677,7 @@
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 animate-fadeIn">
                     <h3 class="text-lg font-black text-slate-800 mb-2">Matriz Interactiva de Testers y Roles</h3>
                     <p class="text-xs text-slate-500 mb-6">Plantilla base de cohorte. Usa esta matriz para replicar ciclos semanales hasta la meta de ${APP_CONFIG.targetBetaTesters} beta testers.</p>
+                    ${renderTestRunSummary()}
                     <div class="space-y-6">
                         ${state.testers.map(tester => `
                             <div class="border border-slate-200 rounded-xl p-5 shadow-sm hover:border-indigo-200 transition-all">
@@ -1811,6 +1993,12 @@
             document.querySelectorAll('[data-notes]').forEach(ta => {
                 ta.removeEventListener('input', notesInputHandler);
                 ta.addEventListener('input', notesInputHandler);
+            });
+
+            document.getElementById('test-run-filter')?.addEventListener('change', function() {
+                state.selectedTestRunFilter = this.value;
+                schedulePersist();
+                renderTabs();
             });
 
             // SUS buttons

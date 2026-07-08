@@ -1,6 +1,6 @@
 # Versioned form editing guide
 
-This project keeps form content in `forms/catalog.js` and stores a snapshot of the active form in each submission under `answersJson.__meta`.
+This project keeps form content in `forms/catalog.js` and stores a snapshot of the active form in each submission under `answers.__meta` / `answersJson.__meta`.
 
 ## Editing rule
 
@@ -30,4 +30,4 @@ node .\scripts\verify-frontend-contracts.mjs
 
 ## Why snapshots matter
 
-Each submission stores the exact form version and question/options snapshot seen by the tester. This keeps historical answers interpretable even after active questions change.
+Each submission stores the exact form version, campaign tags, and question/options snapshot seen by the tester. This keeps historical answers interpretable even after active questions change.

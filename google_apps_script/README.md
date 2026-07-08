@@ -76,7 +76,7 @@ Recommended placement: inside <head>, after Tailwind and before the main script 
   - `video/webm`
   - `application/pdf`
 - Upload filename guard: CR/LF removed and filename truncated before write.
-- Evidence URLs, `formVersion`, and `formSnapshot` are stored in `answersJson` and become visible when reading submissions back through GET or spreadsheet review.
+- Evidence URLs stay in the answer fields; `formVersion`, `formSnapshot`, `testRun`, `cohort`, and `submittedAt` are stored in `answersJson.__meta` and become visible when reading submissions back through GET or spreadsheet review.
 - Never commit a real read/admin token into this repository; keep `GX_QA_CONFIG.readAdminToken` empty and pass the token at admin-open time via URL.
 
 ## 8) Live QA smoke test (recommended for each release)

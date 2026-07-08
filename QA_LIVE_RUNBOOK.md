@@ -24,12 +24,13 @@ This runbook is for the active QA delivery window on GitHub Pages.
 3. Evidence uploads: validate image/PDF/video uploads up to 10 MB; confirm they land in the Drive evidence folder and the URLs are written to `answersJson` for later review via GET/readback.
 4. Readback protection: confirm GET requests without the read/admin token return `{ ok:false, error:'unauthorized' }` and no items.
 5. Confirm the committed placeholders `CHANGE_ME_READ_ADMIN_TOKEN` and `PASTE_READ_ADMIN_TOKEN_HERE` do not authorize readback.
+6. Never delete Spreadsheet rows to "reset" a campaign; back up/archive first.
 
 ## Lightweight deterministic checks
 1. Run `node .\scripts\verify-frontend-contracts.mjs`.
 2. Confirm reference toggles hide legacy media when `reference.enabled=false`.
 3. Confirm Google Apps Script submit parsing treats application-level `{ ok: false }` as failure.
-4. Confirm the versioned form catalog is loaded from `forms/catalog.js` and submissions carry snapshot metadata in `answers.__meta`.
+4. Confirm the versioned form catalog is loaded from `forms/catalog.js` and submissions carry snapshot metadata plus `testRun`/`cohort` under `answers.__meta`.
 
 ## Incident triage
 - P0: Blocking issue preventing task completion. Escalate immediately and assign owner.

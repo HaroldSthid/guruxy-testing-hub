@@ -173,6 +173,57 @@ function buildFormSnapshot(formData, answers) {
   return snapshot;
 }
 
+function normalizeSubmissionTag(value, fallback) {
+  const clean = String(value || '').replace(/[<>]/g, '').replace(/[\u0000-\u001F\u007F]/g, ' ').trim();
+  return clean || fallback;
+}
+
+function parseMaybeJson(value) {
+  if (!value) return null;
+  if (typeof value === 'object') return value;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null;
+  try {
+    return JSON.parse(trimmed);
+  } catch (_err) {
+    return null;
+  }
+}
+
+function getSubmissionAnswers(submission) {
+  if (submission && submission.answers && typeof submission.answers === 'object' && !Array.isArray(submission.answers)) {
+    return submission.answers;
+  }
+  const parsed = parseMaybeJson(submission && submission.answersJson);
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+}
+
+function getSubmissionMeta(submission) {
+  const meta = getSubmissionAnswers(submission).__meta;
+  return meta && typeof meta === 'object' && !Array.isArray(meta) ? meta : {};
+}
+
+function getSubmissionTestRun(submission) {
+  const meta = getSubmissionMeta(submission);
+  return normalizeSubmissionTag(meta.testRun || submission?.testRun || '', 'legacy');
+}
+
+function getSubmissionCohort(submission) {
+  const meta = getSubmissionMeta(submission);
+  return normalizeSubmissionTag(meta.cohort || submission?.cohort || '', 'unassigned');
+}
+
+function buildSubmissionMeta(formVersion, formSnapshot, submittedAt, testRun, cohort) {
+  return {
+    testRun: normalizeSubmissionTag(testRun, 'legacy'),
+    cohort: normalizeSubmissionTag(cohort, 'unassigned'),
+    submittedAt: submittedAt || new Date().toISOString(),
+    formVersion,
+    formSnapshot
+  };
+}
+
 function isPlaceholderReadAdminToken(token) {
   const normalized = String(token || '').trim();
   return !normalized || normalized === 'CHANGE_ME_READ_ADMIN_TOKEN' || normalized === 'PASTE_READ_ADMIN_TOKEN_HERE';
@@ -204,6 +255,59 @@ function buildShareUrlForCurrentForm(currentUrl, selectedForm) {
   url.searchParams.delete('adminToken');
   url.searchParams.delete('readToken');
   return url.toString();
+}
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
+}
+
+function renderTestRunOption(run, selectedRun) {
+  return `<option value="${escapeAttr(run)}"${selectedRun === run ? ' selected' : ''}>${escapeHtml(run)}</option>`;
+}
+
+function renderGroupedTestRunSummary(responses, selectedRun = 'all') {
+  const filteredResponses = selectedRun === 'all'
+    ? responses
+    : responses.filter(submission => submission.testRun === selectedRun);
+
+  const runStats = new Map();
+  filteredResponses.forEach(submission => {
+    const run = submission.testRun || 'legacy';
+    const cohort = submission.cohort || 'unassigned';
+    const current = runStats.get(run) || { count: 0, latestAt: '', cohorts: new Set() };
+    current.count += 1;
+    current.cohorts.add(cohort);
+    if (!current.latestAt || new Date(submission.submittedAt || 0) > new Date(current.latestAt || 0)) {
+      current.latestAt = submission.submittedAt || '';
+    }
+    runStats.set(run, current);
+  });
+
+  const optionsHtml = [...new Set(['legacy', ...responses.map(submission => submission.testRun || 'legacy')])]
+    .map(run => renderTestRunOption(run, selectedRun))
+    .join('');
+
+  const cardsHtml = [...runStats.entries()].map(([run, stats]) => `
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-sm font-extrabold text-slate-800">${escapeHtml(run)}</span>
+        <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">${stats.count}</span>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-1">Cohorts: ${escapeHtml([...stats.cohorts].join(', '))}</p>
+    </div>
+  `).join('');
+
+  return { optionsHtml, cardsHtml };
 }
 
 assert.deepEqual(
@@ -257,10 +361,21 @@ assert.equal(snapshot.sections[0].questions[0].type, 'Paragraph');
 assert.equal(snapshot.sections[0].questions[0].reference.items.length, 1);
 assert.equal(snapshot.sections[0].questions[1].type, 'File Upload');
 
+const submissionMeta = buildSubmissionMeta('v1', snapshot, '2026-07-07T18:00:00.000Z', 'internal-smoke', 'internal-smoke-cohort');
+assert.equal(submissionMeta.testRun, 'internal-smoke');
+assert.equal(submissionMeta.cohort, 'internal-smoke-cohort');
+assert.equal(submissionMeta.submittedAt, '2026-07-07T18:00:00.000Z');
+assert.equal(submissionMeta.formVersion, 'v1');
+assert.deepEqual(submissionMeta.formSnapshot, snapshot);
+
 const legacyAnswers = JSON.parse('{"q_A0_1":"Tester","q_A4_5":[{"filename":"evidence.png","mimeType":"image/png","base64":"data:image/png;base64,AAAA"}]}');
 assert.equal(isAnsweredValue(legacyAnswers.q_A0_1), true);
 assert.equal(isAnsweredValue(legacyAnswers.q_A4_5), true);
 assert.equal(legacyAnswers.q_missing, undefined);
+assert.equal(getSubmissionTestRun({ answers: { __meta: { testRun: 'public-beta' } } }), 'public-beta');
+assert.equal(getSubmissionTestRun({ answers: { __meta: { formVersion: 'v1' } } }), 'legacy');
+assert.equal(getSubmissionTestRun({ answersJson: '{"__meta":{"testRun":"campaign-42"}}' }), 'campaign-42');
+assert.equal(getSubmissionCohort({ answers: { __meta: {} } }), 'unassigned');
 
 assert.deepEqual(
   resolveQuestionReferenceMedia({
@@ -352,5 +467,18 @@ assert.equal(shareUrl.includes('form=B'), true);
 
 assert.equal(parseResponseJsonText('ok:false'), null);
 assert.equal(parseResponseJsonText(''), null);
+
+const hostileRun = 'beta" onclick="alert(1)';
+const hostileCohort = 'cohort<svg onload=1>';
+const renderedSummary = renderGroupedTestRunSummary([
+  { testRun: hostileRun, cohort: hostileCohort, submittedAt: '2026-07-07T18:00:00.000Z' },
+  { testRun: 'beta-public-2026-07', cohort: 'beta-public-2026-07', submittedAt: '2026-07-07T18:30:00.000Z' }
+], hostileRun);
+
+assert.equal(renderTestRunOption('beta-public-2026-07', 'beta-public-2026-07'), '<option value="beta-public-2026-07" selected>beta-public-2026-07</option>');
+assert.equal(renderedSummary.optionsHtml.includes('value="beta&quot; onclick=&quot;alert(1)" selected'), true);
+assert.equal(renderedSummary.optionsHtml.includes('>beta&quot; onclick=&quot;alert(1)</option>'), true);
+assert.equal(renderedSummary.cardsHtml.includes('Cohorts: cohort&lt;svg onload=1&gt;'), true);
+assert.equal(renderedSummary.optionsHtml.includes('value="beta-public-2026-07">beta-public-2026-07</option>'), true);
 
 console.log('Frontend contract checks passed.');

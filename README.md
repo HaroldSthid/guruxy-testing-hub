@@ -116,8 +116,12 @@ Requisitos:
 
 ## Catálogo versionado de formularios
 - Las definiciones de Forms A/B/C viven en `forms/catalog.js` como catálogo versionado.
-- Cada envío guarda `formVersion` y `formSnapshot` dentro de `answers.__meta` para trazabilidad sin tocar columnas de Spreadsheet.
+- Cada envío guarda `formVersion`, `formSnapshot`, `testRun`, `cohort` y `submittedAt` dentro de `answers.__meta` para trazabilidad sin tocar columnas de Spreadsheet.
 - Si el catálogo no carga, el hub cae en modo seguro sin romper submissions antiguas.
+
+## Operación segura de Spreadsheet
+- No borrar filas para "resetear" una campaña; primero exportar/respaldar y archivar evidencia.
+- Usar `testRun`/`cohort` en `answers.__meta` para separar pruebas internas, beta pública y campañas futuras sin mutar datos históricos.
 
 ## Nota de estabilidad para QA
 Si necesitas experimentar sin tocar producción inmediata, trabajar en `guruxy_testing_hub_working.html` y promover cambios a `index.html` solo cuando estén verificados.
