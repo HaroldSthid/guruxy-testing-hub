@@ -257,6 +257,41 @@ function buildShareUrlForCurrentForm(currentUrl, selectedForm) {
   return url.toString();
 }
 
+function resolveUrlStateFromSearch(search) {
+  const params = new URLSearchParams(String(search || '').startsWith('?') ? String(search || '') : `?${String(search || '')}`);
+  const tab = params.get('tab');
+  const form = params.get('form');
+  const mode = String(params.get('mode') || '').toLowerCase();
+  const validTabs = ['strategy', 'forms', 'testers', 'sus', 'bugs'];
+  const validForms = ['A', 'B', 'C'];
+  const nextState = {};
+
+  if (tab && validTabs.includes(tab)) nextState.activeTab = tab;
+  if (form && validForms.includes(form)) nextState.selectedForm = form;
+
+  if (mode === 'tester') {
+    nextState.uiMode = 'tester';
+    nextState.activeTab = 'forms';
+    if (form && validForms.includes(form)) nextState.lockedForm = form;
+    return nextState;
+  }
+
+  if (mode === 'public') {
+    nextState.uiMode = 'public';
+    nextState.activeTab = 'forms';
+    if (form && validForms.includes(form)) nextState.lockedForm = form;
+    return nextState;
+  }
+
+  if (mode === 'admin') {
+    nextState.uiMode = 'full';
+    nextState.activeTab = tab && validTabs.includes(tab) ? tab : 'testers';
+    nextState.lockedForm = null;
+  }
+
+  return nextState;
+}
+
 function escapeHtml(value) {
   if (value === null || value === undefined) return '';
   return String(value)
@@ -455,6 +490,26 @@ assert.equal(
 assert.equal(
   resolveReadAdminToken('?mode=public', 'CONFIG TOKEN'),
   'CONFIG TOKEN'
+);
+
+assert.deepEqual(
+  resolveUrlStateFromSearch('?mode=admin&readToken=READ'),
+  { uiMode: 'full', activeTab: 'testers', lockedForm: null }
+);
+
+assert.deepEqual(
+  resolveUrlStateFromSearch('?mode=admin&tab=sus&form=B'),
+  { activeTab: 'sus', selectedForm: 'B', uiMode: 'full', lockedForm: null }
+);
+
+assert.deepEqual(
+  resolveUrlStateFromSearch('?mode=public&form=C&tab=testers'),
+  { activeTab: 'forms', selectedForm: 'C', uiMode: 'public', lockedForm: 'C' }
+);
+
+assert.deepEqual(
+  resolveUrlStateFromSearch('?mode=tester&form=A&tab=bugs'),
+  { activeTab: 'forms', selectedForm: 'A', uiMode: 'tester', lockedForm: 'A' }
 );
 
 const shareUrl = buildShareUrlForCurrentForm('https://example.test/?mode=admin&readToken=READ&tab=sus', 'B');

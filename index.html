@@ -819,33 +819,52 @@
             return url.toString();
         }
 
+        function resolveUrlStateFromSearch(search) {
+            const params = new URLSearchParams(String(search || '').startsWith('?') ? String(search || '') : `?${String(search || '')}`);
+            const tab = params.get('tab');
+            const form = params.get('form');
+            const mode = String(params.get('mode') || '').toLowerCase();
+            const validTabs = ['strategy', 'forms', 'testers', 'sus', 'bugs'];
+            const validForms = ['A', 'B', 'C'];
+            const nextState = {};
+
+            if (tab && validTabs.includes(tab)) {
+                nextState.activeTab = tab;
+            }
+            if (form && validForms.includes(form)) {
+                nextState.selectedForm = form;
+            }
+
+            if (mode === 'tester') {
+                nextState.uiMode = 'tester';
+                nextState.activeTab = 'forms';
+                if (form && validForms.includes(form)) {
+                    nextState.lockedForm = form;
+                }
+                return nextState;
+            }
+
+            if (mode === 'public') {
+                nextState.uiMode = 'public';
+                nextState.activeTab = 'forms';
+                if (form && validForms.includes(form)) {
+                    nextState.lockedForm = form;
+                }
+                return nextState;
+            }
+
+            if (mode === 'admin') {
+                nextState.uiMode = 'full';
+                nextState.activeTab = tab && validTabs.includes(tab) ? tab : 'testers';
+                nextState.lockedForm = null;
+            }
+
+            return nextState;
+        }
+
         function applyUrlState() {
             try {
-                const params = new URLSearchParams(window.location.search);
-                const tab = params.get('tab');
-                const form = params.get('form');
-                const mode = params.get('mode');
-
-                if (tab && ['strategy', 'forms', 'testers', 'sus', 'bugs'].includes(tab)) {
-                    state.activeTab = tab;
-                }
-                if (form && ['A', 'B', 'C'].includes(form)) {
-                    state.selectedForm = form;
-                }
-                if (mode === 'tester') {
-                    state.uiMode = 'tester';
-                    state.activeTab = 'forms';
-                    if (form && ['A', 'B', 'C'].includes(form)) {
-                        state.lockedForm = form;
-                    }
-                }
-                if (mode === 'public') {
-                    state.uiMode = 'public';
-                    state.activeTab = 'forms';
-                    if (form && ['A', 'B', 'C'].includes(form)) {
-                        state.lockedForm = form;
-                    }
-                }
+                Object.assign(state, resolveUrlStateFromSearch(window.location.search));
             } catch (_err) {
                 // If URL parsing fails, keep current state.
             }
